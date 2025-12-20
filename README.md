@@ -8,10 +8,11 @@
 
 # CakeVite: Vite Integration for CakePHP
 
-Modern [Vite.js](https://vitejs.dev/) integration for CakePHP 5.2+ applications. Seamlessly switch between development and production modes with automatic asset tag generation.
+A [Vite.js](https://vitejs.dev/) integration for CakePHP 5.0+ applications. Seamlessly switch between development and production modes with automatic asset tag generation.
 
 > [!NOTE]
-> This is a spiritual successor to [passchn/cakephp-vite](https://github.com/passchn/cakephp-vite), rewritten with modern PHP 8.2+ features and a service-oriented architecture. There is no affiliation with the original project.
+> This project is a spiritual successor to [passchn/cakephp-vite](https://github.com/passchn/cakephp-vite), rewritten with modern PHP and a service-oriented architecture. There is no affiliation with the original project.
+
 
 ## Table of Contents
 
@@ -46,7 +47,6 @@ Modern [Vite.js](https://vitejs.dev/) integration for CakePHP 5.2+ applications.
 - 🔧 **Flexible Configuration**: Customize dev server URLs, manifest paths, and more
 - 🎨 **CSS Extraction**: Automatically includes CSS dependencies from JavaScript entries in production
 - ⚡ **HMR Support**: Full Hot Module Replacement support in development mode
-- 🏗️ **Modern Architecture**: Built with PHP 8.2+ features (enums, readonly properties, constructor promotion)
 - ✅ **Type-Safe**: 100% type coverage with PHPStan level 8
 - 🧪 **Well Tested**: 95%+ code coverage with comprehensive unit and integration tests
 
@@ -55,7 +55,7 @@ Modern [Vite.js](https://vitejs.dev/) integration for CakePHP 5.2+ applications.
 ### Requirements
 
 - PHP 8.2 or higher
-- CakePHP 5.2 or higher
+- CakePHP 5.0 or higher
 - Vite 2.0 or higher (installed via npm/yarn/pnpm)
 
 ### Installing the Plugin
@@ -457,7 +457,7 @@ composer cs-fix
 Run static analysis:
 
 ```bash
-composer stan
+composer phpstan
 ```
 
 ## Contributing
