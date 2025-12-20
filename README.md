@@ -6,6 +6,432 @@
 [![CakePHP Version](https://img.shields.io/badge/CakePHP-5.2%2B-red.svg)](https://cakephp.org/)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/josbeir/cakephp-vite)](https://packagist.org/packages/josbeir/cakephp-vite)
 
-# Vite plugin for CakePHP
+# CakeVite: Vite Integration for CakePHP
 
-WIP
+Modern [Vite.js](https://vitejs.dev/) integration for CakePHP 5.2+ applications. Seamlessly switch between development and production modes with automatic asset tag generation.
+
+> [!NOTE]
+> This is a spiritual successor to [passchn/cakephp-vite](https://github.com/passchn/cakephp-vite), rewritten with modern PHP 8.2+ features and a service-oriented architecture. There is no affiliation with the original project.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [Requirements](#requirements)
+  - [Installing the Plugin](#installing-the-plugin)
+- [Quick Start](#quick-start)
+  - [1. Configure Vite](#1-configure-vite)
+  - [2. Load the Helper](#2-load-the-helper)
+  - [3. Use in Templates](#3-use-in-templates)
+- [Configuration](#configuration)
+  - [Basic Configuration](#basic-configuration)
+  - [Advanced Configuration](#advanced-configuration)
+  - [Environment Variables](#environment-variables)
+- [Usage](#usage)
+  - [Development Mode](#development-mode)
+  - [Production Mode](#production-mode)
+  - [Plugin Assets](#plugin-assets)
+  - [Multiple Entry Points](#multiple-entry-points)
+  - [Custom Attributes](#custom-attributes)
+- [How It Works](#how-it-works)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Features
+
+- 🚀 **Automatic Mode Detection**: Seamlessly switches between development and production based on your environment
+- 🎯 **Zero Configuration**: Works out of the box with sensible defaults
+- 📦 **Plugin Support**: Load assets from CakePHP plugins with ease
+- 🔧 **Flexible Configuration**: Customize dev server URLs, manifest paths, and more
+- 🎨 **CSS Extraction**: Automatically includes CSS dependencies from JavaScript entries in production
+- ⚡ **HMR Support**: Full Hot Module Replacement support in development mode
+- 🏗️ **Modern Architecture**: Built with PHP 8.2+ features (enums, readonly properties, constructor promotion)
+- ✅ **Type-Safe**: 100% type coverage with PHPStan level 8
+- 🧪 **Well Tested**: 95%+ code coverage with comprehensive unit and integration tests
+
+## Installation
+
+### Requirements
+
+- PHP 8.2 or higher
+- CakePHP 5.2 or higher
+- Vite 2.0 or higher (installed via npm/yarn/pnpm)
+
+### Installing the Plugin
+
+Install via Composer:
+
+```bash
+composer require josbeir/cakephp-vite
+```
+
+Load the plugin:
+
+```bash
+bin/cake plugin load CakeVite
+```
+
+## Quick Start
+
+### 1. Configure Vite
+
+Create or update your `vite.config.js`:
+
+```javascript
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  root: 'webroot',
+  base: '/',
+  build: {
+    manifest: true,
+    outDir: '../webroot',
+    rollupOptions: {
+      input: {
+        main: 'webroot/src/main.js'
+      }
+    }
+  },
+  server: {
+    origin: 'http://localhost:3000'
+  }
+});
+```
+
+### 2. Load the Helper
+
+In your `src/View/AppView.php`:
+
+```php
+public function initialize(): void
+{
+    parent::initialize();
+
+    $this->loadHelper('CakeVite.Vite');
+}
+```
+
+### 3. Use in Templates
+
+In your layout file (e.g., `templates/layout/default.php`):
+
+```php
+<!DOCTYPE html>
+<html>
+<head>
+    <?= $this->Html->charset() ?>
+    <title><?= $this->fetch('title') ?></title>
+
+    <?php $this->Vite->script(['files' => ['src/main.js']]); ?>
+    <?php $this->Vite->css(['files' => ['src/style.css']]); ?>
+
+    <?= $this->fetch('css') ?>
+    <?= $this->fetch('script') ?>
+</head>
+<body>
+    <?= $this->fetch('content') ?>
+</body>
+</html>
+```
+
+**Start Vite dev server:**
+
+```bash
+npm run dev  # or: vite
+```
+
+**Build for production:**
+
+```bash
+npm run build  # or: vite build
+```
+
+## Configuration
+
+### Basic Configuration
+
+Create `config/app_vite.php` in your application for custom settings:
+
+```php
+<?php
+return [
+    'CakeVite' => [
+        'devServer' => [
+            'url' => 'http://localhost:3000',
+            'entries' => [
+                'script' => ['src/main.js'],
+                'style' => ['src/style.css'],
+            ],
+        ],
+    ],
+];
+```
+
+> [!NOTE]
+> The plugin will automatically detect and load `config/app_vite.php` if it exists for backwards compatibility.
+
+### Advanced Configuration
+
+All available configuration options:
+
+```php
+<?php
+return [
+    'CakeVite' => [
+        'devServer' => [
+            // Development server URL
+            'url' => env('VITE_DEV_SERVER_URL', 'http://localhost:3000'),
+
+            // Hostname hints for development mode detection
+            'hostHints' => ['localhost', '127.0.0.1', '.test', '.local'],
+
+            // Default entries for development mode
+            'entries' => [
+                'script' => ['src/main.js'],
+                'style' => ['src/style.css'],
+            ],
+        ],
+
+        'build' => [
+            // Path to Vite's manifest.json
+            'manifestPath' => WWW_ROOT . 'manifest.json',
+
+            // Output directory (relative to webroot)
+            'outDirectory' => false,  // or 'dist', 'build', etc.
+        ],
+
+        // Force production mode (ignores environment detection)
+        'forceProductionMode' => false,
+
+        // Plugin name for loading plugin assets (null for app assets)
+        'plugin' => null,
+
+        // Cookie/query parameter name to force production mode
+        'productionModeHint' => 'vprod',
+
+        // View block names for script and CSS tags
+        'viewBlocks' => [
+            'script' => 'script',
+            'css' => 'css',
+        ],
+    ],
+];
+```
+
+### Environment Variables
+
+You can use environment variables for configuration:
+
+```bash
+# .env
+VITE_DEV_SERVER_URL=http://localhost:5173
+```
+
+Then reference in your config:
+
+```php
+'devServer' => [
+    'url' => env('VITE_DEV_SERVER_URL', 'http://localhost:3000'),
+],
+```
+
+## Usage
+
+### Development Mode
+
+In development, CakeVite automatically:
+- Connects to your Vite dev server
+- Includes the Vite client for HMR
+- Loads modules as ES modules
+- Provides instant hot reloading
+
+```php
+// In your template
+<?php $this->Vite->script(['files' => ['src/main.js']]); ?>
+```
+
+**Output in development:**
+```html
+<script type="module" src="http://localhost:3000/@vite/client"></script>
+<script type="module" src="http://localhost:3000/src/main.js"></script>
+```
+
+### Production Mode
+
+In production, CakeVite automatically:
+- Reads the build manifest
+- Resolves hashed filenames
+- Includes dependent CSS files
+- Handles legacy browser support
+
+```php
+// Same code in template
+<?php $this->Vite->script(['files' => ['src/main.js']]); ?>
+```
+
+**Output in production:**
+```html
+<script type="module" src="/assets/main-a1b2c3d4.js"></script>
+<link rel="stylesheet" href="/assets/main-e5f6g7h8.css" />
+```
+
+### Plugin Assets
+
+Load assets from a CakePHP plugin:
+
+```php
+// Load from MyPlugin
+<?php
+$this->Vite->pluginScript('MyPlugin', true, ['files' => ['src/plugin.js']]);
+$this->Vite->pluginCss('MyPlugin', true, ['files' => ['src/plugin.css']]);
+?>
+```
+
+Or configure globally:
+
+```php
+'CakeVite' => [
+    'plugin' => 'MyPlugin',
+],
+```
+
+### Multiple Entry Points
+
+Load multiple files at once:
+
+```php
+<?php
+$this->Vite->script([
+    'files' => [
+        'src/main.js',
+        'src/admin.js',
+        'src/analytics.js',
+    ]
+]);
+?>
+```
+
+Filter production assets by pattern:
+
+```php
+<?php
+// Only load files matching 'admin'
+$this->Vite->script([
+    'filter' => 'admin'
+]);
+?>
+```
+
+### Custom Attributes
+
+Add custom HTML attributes to generated tags:
+
+```php
+<?php
+$this->Vite->script([
+    'files' => ['src/main.js'],
+    'attributes' => [
+        'defer' => true,
+        'data-turbo-track' => 'reload',
+    ]
+]);
+?>
+```
+
+**Output:**
+```html
+<script type="module" defer data-turbo-track="reload" src="..."></script>
+```
+
+### Custom View Blocks
+
+Use custom view blocks for scripts and styles:
+
+```php
+<?php
+// Append to 'custom_scripts' block instead of default 'script'
+$this->Vite->script([
+    'files' => ['src/main.js'],
+    'block' => 'custom_scripts'
+]);
+?>
+
+<!-- In layout -->
+<?= $this->fetch('custom_scripts') ?>
+```
+
+### Check Current Mode
+
+Check if running in development mode:
+
+```php
+<?php if ($this->Vite->isDev()): ?>
+    <!-- Development-only content -->
+    <div class="dev-toolbar">Development Mode</div>
+<?php endif; ?>
+```
+
+## How It Works
+
+### Mode Detection
+
+CakeVite automatically detects the environment based on:
+
+1. **Force Production Mode**: `forceProductionMode` configuration
+2. **Production Hint**: Cookie or query parameter (`vprod` by default)
+3. **Host Hints**: Matches hostname against development patterns
+4. **Default**: Falls back to production for safety
+
+### Development Mode
+- Connects to Vite dev server
+- Serves assets from configured dev server URL
+- Includes Vite client for HMR
+- No manifest file required
+
+### Production Mode
+- Reads `manifest.json` generated by Vite
+- Maps entry points to hashed output files
+- Automatically includes CSS dependencies
+- Supports legacy browser builds
+
+## Testing
+
+Run the test suite:
+
+```bash
+composer test
+```
+
+Run with coverage:
+
+```bash
+composer test-coverage
+```
+
+Check code standards:
+
+```bash
+composer cs-check
+composer cs-fix
+```
+
+Run static analysis:
+
+```bash
+composer stan
+```
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Write tests for your changes
+4. Ensure all quality checks pass (`composer cs-check && composer stan && composer test`)
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
