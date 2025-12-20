@@ -13,11 +13,24 @@ use JsonException;
  * Handles manifest file loading and parsing
  *
  * Stateless service for reading and parsing Vite manifest files.
+ * Implements in-memory caching to avoid duplicate file reads within
+ * the same request lifecycle.
  */
 final class ManifestService
 {
     /**
-     * Load and parse manifest file
+     * In-memory cache of loaded manifests (per request)
+     *
+     * @var array<string, \CakeVite\ValueObject\ManifestCollection>
+     */
+    private static array $manifestCache = [];
+
+    /**
+     * Load and parse manifest file with in-memory caching
+     *
+     * Caches parsed manifests by path to avoid duplicate file reads
+     * within the same request lifecycle. Cache is automatically cleared
+     * between HTTP requests.
      *
      * @param \CakeVite\ValueObject\ViteConfig $config Configuration
      * @return \CakeVite\ValueObject\ManifestCollection Collection of manifest entries
@@ -26,6 +39,11 @@ final class ManifestService
     public function load(ViteConfig $config): ManifestCollection
     {
         $manifestPath = $this->resolveManifestPath($config);
+
+        // Return cached manifest if already loaded
+        if (isset(self::$manifestCache[$manifestPath])) {
+            return self::$manifestCache[$manifestPath];
+        }
 
         if (!is_readable($manifestPath)) {
             throw new ManifestException(
@@ -47,7 +65,24 @@ final class ManifestService
             );
         }
 
-        return $this->parseManifest($manifest, $config->buildDirectory);
+        $collection = $this->parseManifest($manifest, $config->buildDirectory);
+
+        // Cache the parsed manifest
+        self::$manifestCache[$manifestPath] = $collection;
+
+        return $collection;
+    }
+
+    /**
+     * Clear the manifest cache
+     *
+     * Useful for testing to ensure cache isolation between tests.
+     *
+     * @internal
+     */
+    public static function clearCache(): void
+    {
+        self::$manifestCache = [];
     }
 
     /**

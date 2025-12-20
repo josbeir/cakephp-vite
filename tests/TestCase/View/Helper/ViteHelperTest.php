@@ -6,6 +6,7 @@ namespace CakeVite\Test\TestCase\View\Helper;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
 use Cake\View\View;
+use CakeVite\Service\ManifestService;
 use CakeVite\View\Helper\ViteHelper;
 
 /**
@@ -38,6 +39,7 @@ class ViteHelperTest extends TestCase
     protected function tearDown(): void
     {
         parent::tearDown();
+        ManifestService::clearCache();
     }
 
     /**

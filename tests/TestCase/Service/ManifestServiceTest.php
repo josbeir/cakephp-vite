@@ -17,6 +17,15 @@ use PHPUnit\Framework\TestCase;
 class ManifestServiceTest extends TestCase
 {
     /**
+     * Tear down test to clear manifest cache
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        ManifestService::clearCache();
+    }
+
+    /**
      * Test load valid manifest file
      */
     public function testLoadValidManifest(): void
@@ -186,5 +195,71 @@ class ManifestServiceTest extends TestCase
         $this->assertSame('src/style.css', $cssEntry->key);
         $this->assertSame([], $cssEntry->css);
         $this->assertSame([], $cssEntry->imports);
+    }
+
+    /**
+     * Test manifest is cached within request lifecycle
+     */
+    public function testManifestIsCachedDuringRequest(): void
+    {
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json'],
+        ]);
+
+        $service = new ManifestService();
+
+        // First load - reads from disk
+        $manifest1 = $service->load($config);
+
+        // Second load - should return cached instance
+        $manifest2 = $service->load($config);
+
+        // Should be the exact same object (not just equal, but identical)
+        $this->assertSame($manifest1, $manifest2);
+    }
+
+    /**
+     * Test clearCache resets the manifest cache
+     */
+    public function testClearCacheResetsManifestCache(): void
+    {
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json'],
+        ]);
+
+        $service = new ManifestService();
+
+        $manifest1 = $service->load($config);
+
+        ManifestService::clearCache();
+
+        $manifest2 = $service->load($config);
+
+        // After clearing cache, should be different instances
+        $this->assertNotSame($manifest1, $manifest2);
+        // But content should be equal
+        $this->assertEquals($manifest1, $manifest2);
+    }
+
+    /**
+     * Test different manifest paths are cached separately
+     */
+    public function testDifferentManifestsAreCachedSeparately(): void
+    {
+        $config1 = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json'],
+        ]);
+
+        $config2 = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-legacy.json'],
+        ]);
+
+        $service = new ManifestService();
+
+        $manifest1 = $service->load($config1);
+        $manifest2 = $service->load($config2);
+
+        // Different manifests should be different objects
+        $this->assertNotSame($manifest1, $manifest2);
     }
 }

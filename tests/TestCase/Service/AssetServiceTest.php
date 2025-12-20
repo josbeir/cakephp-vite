@@ -28,6 +28,15 @@ class AssetServiceTest extends TestCase
     }
 
     /**
+     * Tear down test to clear manifest cache
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        ManifestService::clearCache();
+    }
+
+    /**
      * Create environment service for development
      */
     private function createDevEnvironmentService(): EnvironmentService
