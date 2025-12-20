@@ -206,6 +206,12 @@ return [
         // Options: 'none', 'link-tag', 'link-header'
         'preload' => env('VITE_PRELOAD_MODE', 'link-tag'),
 
+        // Persistent caching (production performance optimization)
+        'cache' => [
+            'config' => env('VITE_CACHE_CONFIG', false),  // CakePHP cache config name
+            'development' => false,
+        ],
+
         // Force production mode (ignores environment detection)
         'forceProductionMode' => false,
 
@@ -522,6 +528,43 @@ VITE_PRELOAD_MODE=none  # or 'link-tag', 'link-header'
 - Reduces load time by downloading dependencies in parallel
 - Particularly beneficial for code-split applications
 - Browser can start downloading imports while parsing main script
+
+### Caching
+
+Enable persistent caching of the manifest file in production to eliminate file I/O overhead on every request.
+
+**Enable Caching:**
+```php
+// config/app_vite.php
+return [
+    'CakeVite' => [
+        'cache' => [
+            'config' => 'default',  // Use any CakePHP cache config
+        ],
+    ],
+];
+```
+
+**Environment Variable:**
+```bash
+# .env
+VITE_CACHE_CONFIG=default
+```
+
+**Cache Invalidation:**
+- Automatic: cache key includes manifest file mtime
+- When manifest rebuilds, cache automatically invalidates
+
+**Cache in Development:**
+```php
+'cache' => [
+    'config' => 'default',
+    'development' => true,  // Enable caching in dev mode
+],
+```
+
+> [!TIP]
+> Caching is disabled by default. Enable it in production for ~5-10x faster manifest reads (~0.1ms vs ~2-7ms per request).
 
 ### Check Current Mode
 

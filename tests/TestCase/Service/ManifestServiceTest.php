@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace CakeVite\Test\TestCase\Service;
 
+use Cake\Cache\Cache;
+use CakeVite\Enum\Environment;
 use CakeVite\Exception\ManifestException;
 use CakeVite\Service\ManifestService;
 use CakeVite\ValueObject\ManifestCollection;
@@ -261,5 +263,113 @@ class ManifestServiceTest extends TestCase
 
         // Different manifests should be different objects
         $this->assertNotSame($manifest1, $manifest2);
+    }
+
+    /**
+     * Test caching is disabled when cacheConfig is false
+     */
+    public function testCachingDisabledByDefault(): void
+    {
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json'],
+            'cache' => ['config' => false],
+        ]);
+
+        // Load twice with different service instances to avoid in-memory cache
+        $service1 = new ManifestService();
+        $manifest1 = $service1->load($config, Environment::Production);
+
+        ManifestService::clearCache(); // Clear in-memory cache
+
+        $service2 = new ManifestService();
+        $manifest2 = $service2->load($config, Environment::Production);
+
+        $this->assertNotSame($manifest1, $manifest2);
+    }
+
+    /**
+     * Test caching works in production with cache config
+     */
+    public function testCachingEnabledInProduction(): void
+    {
+        Cache::setConfig('test_cache', [
+            'className' => 'File',
+            'path' => TMP . 'cache' . DS,
+            'prefix' => 'test_',
+        ]);
+
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json'],
+            'cache' => ['config' => 'test_cache'],
+        ]);
+
+        $service = new ManifestService();
+
+        // First load - miss cache
+        $manifest1 = $service->load($config, Environment::Production);
+
+        // Second load - hit cache (should be same instance)
+        $manifest2 = $service->load($config, Environment::Production);
+
+        $this->assertSame($manifest1, $manifest2);
+
+        Cache::drop('test_cache');
+    }
+
+    /**
+     * Test caching disabled in development by default
+     */
+    public function testCachingDisabledInDevelopmentByDefault(): void
+    {
+        Cache::setConfig('test_cache_dev', [
+            'className' => 'File',
+            'path' => TMP . 'cache' . DS,
+            'prefix' => 'test_dev_',
+        ]);
+
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json'],
+            'cache' => ['config' => 'test_cache_dev', 'development' => false],
+        ]);
+
+        // Load in development mode - should not use persistent cache
+        $service1 = new ManifestService();
+        $manifest1 = $service1->load($config, Environment::Development);
+
+        ManifestService::clearCache(); // Clear in-memory cache
+
+        $service2 = new ManifestService();
+        $manifest2 = $service2->load($config, Environment::Development);
+
+        $this->assertNotSame($manifest1, $manifest2);
+
+        Cache::drop('test_cache_dev');
+    }
+
+    /**
+     * Test caching can be enabled in development
+     */
+    public function testCachingCanBeEnabledInDevelopment(): void
+    {
+        Cache::setConfig('test_cache_dev_enabled', [
+            'className' => 'File',
+            'path' => TMP . 'cache' . DS,
+            'prefix' => 'test_dev_enabled_',
+        ]);
+
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json'],
+            'cache' => ['config' => 'test_cache_dev_enabled', 'development' => true],
+        ]);
+
+        $service = new ManifestService();
+
+        // Load in development mode - should cache
+        $manifest1 = $service->load($config, Environment::Development);
+        $manifest2 = $service->load($config, Environment::Development);
+
+        $this->assertSame($manifest1, $manifest2);
+
+        Cache::drop('test_cache_dev_enabled');
     }
 }

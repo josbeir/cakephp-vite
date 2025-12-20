@@ -27,6 +27,8 @@ final readonly class ViteConfig
      * @param string $scriptBlock View block name for scripts
      * @param string $cssBlock View block name for CSS
      * @param \CakeVite\Enum\PreloadMode $preloadMode Preload mode for module dependencies
+     * @param string|false $cacheConfig CakePHP cache config name (false = disabled)
+     * @param bool $cacheInDevelopment Enable caching in development mode
      */
     public function __construct(
         public string $devServerUrl,
@@ -41,6 +43,8 @@ final readonly class ViteConfig
         public string $scriptBlock,
         public string $cssBlock,
         public PreloadMode $preloadMode,
+        public string|false $cacheConfig,
+        public bool $cacheInDevelopment,
     ) {
     }
 
@@ -66,6 +70,8 @@ final readonly class ViteConfig
             scriptBlock: $config['viewBlocks']['script'] ?? 'script',
             cssBlock: $config['viewBlocks']['css'] ?? 'css',
             preloadMode: isset($config['preload']) ? PreloadMode::from($config['preload']) : PreloadMode::LinkTag,
+            cacheConfig: $config['cache']['config'] ?? false,
+            cacheInDevelopment: $config['cache']['development'] ?? false,
         );
     }
 
@@ -124,6 +130,10 @@ final readonly class ViteConfig
                 'css' => $this->cssBlock,
             ],
             'preload' => $this->preloadMode->value,
+            'cache' => [
+                'config' => $this->cacheConfig,
+                'development' => $this->cacheInDevelopment,
+            ],
         ];
     }
 }

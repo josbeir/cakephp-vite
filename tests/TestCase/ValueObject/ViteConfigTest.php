@@ -41,6 +41,10 @@ class ViteConfigTest extends TestCase
                 'css' => 'styles',
             ],
             'preload' => 'none',
+            'cache' => [
+                'config' => 'vite_cache',
+                'development' => true,
+            ],
         ]);
 
         $this->assertSame('http://localhost:5173', $config->devServerUrl);
@@ -55,6 +59,8 @@ class ViteConfigTest extends TestCase
         $this->assertSame('js', $config->scriptBlock);
         $this->assertSame('styles', $config->cssBlock);
         $this->assertSame(PreloadMode::None, $config->preloadMode);
+        $this->assertSame('vite_cache', $config->cacheConfig);
+        $this->assertTrue($config->cacheInDevelopment);
     }
 
     /**
@@ -76,6 +82,8 @@ class ViteConfigTest extends TestCase
         $this->assertSame('script', $config->scriptBlock);
         $this->assertSame('css', $config->cssBlock);
         $this->assertSame(PreloadMode::LinkTag, $config->preloadMode);
+        $this->assertFalse($config->cacheConfig);
+        $this->assertFalse($config->cacheInDevelopment);
     }
 
     /**

@@ -110,7 +110,8 @@ final class AssetService
      */
     private function generateProductionScriptTags(ViteConfig $config, array $options): array
     {
-        $manifest = $this->manifestService->load($config);
+        $env = $this->environmentService->detect($config);
+        $manifest = $this->manifestService->load($config, $env);
 
         // Apply filters if specified
         if (!empty($options['files'])) {
@@ -227,7 +228,8 @@ final class AssetService
      */
     private function generateProductionStyleTags(ViteConfig $config, array $options): array
     {
-        $manifest = $this->manifestService->load($config);
+        $env = $this->environmentService->detect($config);
+        $manifest = $this->manifestService->load($config, $env);
 
         // Apply filters
         if (!empty($options['files'])) {

@@ -24,6 +24,14 @@ return [
         'plugin' => null,  // Set to plugin name when using plugin assets
         'productionModeHint' => 'vprod',  // Cookie/query param name
         'preload' => env('VITE_PRELOAD_MODE', 'link-tag'),  // 'none', 'link-tag', 'link-header'
+        'cache' => [
+            // CakePHP cache config name to use (false = disabled)
+            // Examples: 'default', '_cake_core_', or custom cache config
+            'config' => env('VITE_CACHE_CONFIG', false),
+
+            // Enable caching in development mode (usually false)
+            'development' => false,
+        ],
         'viewBlocks' => [
             'script' => 'script',
             'css' => 'css',
