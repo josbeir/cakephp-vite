@@ -5,6 +5,7 @@ namespace CakeVite\View\Helper;
 
 use Cake\Core\Configure;
 use Cake\View\Helper;
+use CakeVite\Enum\Environment;
 use CakeVite\Service\AssetService;
 use CakeVite\Service\EnvironmentService;
 use CakeVite\Service\ManifestService;
@@ -33,18 +34,41 @@ class ViteHelper extends Helper
     private ?AssetService $assetService = null;
 
     /**
+     * Cached configuration (optimization #1: reduce Configure::read calls)
+     */
+    private ?ViteConfig $cachedConfig = null;
+
+    /**
+     * Cached environment detection (optimization #2: reduce environment detection overhead)
+     */
+    private ?Environment $cachedEnvironment = null;
+
+    /**
      * Check if currently in development mode
      *
      * Backwards compatible with ViteScriptsHelper::isDev()
+     *
+     * Uses cached environment detection to avoid repeated cookie/query/host checks.
      *
      * @param \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null $config Configuration
      */
     public function isDev(array|ViteConfig|null $config = null): bool
     {
+        // Return cached result if available (optimization #2)
+        if ($this->cachedEnvironment instanceof Environment && $config === null) {
+            return $this->cachedEnvironment->isDevelopment();
+        }
+
         $config = $this->resolveConfig($config);
         $envService = new EnvironmentService($this->getView()->getRequest());
+        $environment = $envService->detect($config);
 
-        return $envService->detect($config)->isDevelopment();
+        // Cache environment for subsequent calls (only when using default config)
+        if ($config === $this->cachedConfig) {
+            $this->cachedEnvironment = $environment;
+        }
+
+        return $environment->isDevelopment();
     }
 
     /**
@@ -151,6 +175,8 @@ class ViteHelper extends Helper
     /**
      * Resolve configuration from various input types
      *
+     * Uses cached configuration to reduce Configure::read() overhead (optimization #1).
+     *
      * @param \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null $config Configuration
      */
     private function resolveConfig(array|ViteConfig|null $config): ViteConfig
@@ -163,8 +189,8 @@ class ViteHelper extends Helper
             return ViteConfig::fromArray($config);
         }
 
-        // Load from Configure
-        return ViteConfig::fromArray(Configure::read('CakeVite', []));
+        // Load from Configure and cache for request lifetime (optimization #1)
+        return $this->cachedConfig ??= ViteConfig::fromArray(Configure::read('CakeVite', []));
     }
 
     /**

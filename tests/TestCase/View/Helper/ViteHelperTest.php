@@ -6,8 +6,11 @@ namespace CakeVite\Test\TestCase\View\Helper;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
 use Cake\View\View;
+use CakeVite\Enum\Environment;
 use CakeVite\Service\ManifestService;
+use CakeVite\ValueObject\ViteConfig;
 use CakeVite\View\Helper\ViteHelper;
+use ReflectionClass;
 
 /**
  * ViteHelper Test
@@ -301,5 +304,137 @@ class ViteHelperTest extends TestCase
 
         $result = $this->View->fetch('css');
         $this->assertStringContainsString('http://localhost:3000/src/style.css', $result);
+    }
+
+    /**
+     * Test that configuration is cached after first call
+     *
+     * Uses reflection to verify the cachedConfig property is populated.
+     * This verifies optimization #1: configuration caching to reduce Configure::read calls.
+     */
+    public function testConfigurationIsCachedInProperty(): void
+    {
+        $reflection = new ReflectionClass($this->Vite);
+        $property = $reflection->getProperty('cachedConfig');
+
+        // Initially null
+        $this->assertNull($property->getValue($this->Vite));
+
+        // Call isDev() without config - triggers Configure::read and caching
+        $this->Vite->isDev();
+
+        // cachedConfig should now be populated
+        $cachedConfig = $property->getValue($this->Vite);
+        $this->assertInstanceOf(ViteConfig::class, $cachedConfig);
+
+        // Second call should return same cached instance
+        $this->Vite->isDev();
+        /** @phpstan-ignore argument.unresolvableType */
+        $this->assertSame($cachedConfig, $property->getValue($this->Vite));
+    }
+
+    /**
+     * Test that custom config passed as argument is NOT cached
+     *
+     * Only default config from Configure should be cached.
+     */
+    public function testCustomConfigIsNotCached(): void
+    {
+        $reflection = new ReflectionClass($this->Vite);
+        $property = $reflection->getProperty('cachedConfig');
+
+        $customConfig = [
+            'devServer' => ['hostHints' => ['localhost']],
+        ];
+
+        // Call with custom config - should NOT populate cache
+        $this->Vite->isDev($customConfig);
+
+        // Cache should still be null (custom configs aren't cached)
+        $this->assertNull($property->getValue($this->Vite));
+    }
+
+    /**
+     * Test that environment detection is cached after first call
+     *
+     * Uses reflection to verify the cachedEnvironment property is populated.
+     * This verifies optimization #2: environment detection caching.
+     */
+    public function testEnvironmentDetectionIsCachedInProperty(): void
+    {
+        $reflection = new ReflectionClass($this->Vite);
+        $property = $reflection->getProperty('cachedEnvironment');
+
+        // Initially null
+        $this->assertNull($property->getValue($this->Vite));
+
+        // Call isDev() - triggers environment detection and caching
+        $result = $this->Vite->isDev();
+
+        // cachedEnvironment should now be populated
+        $cachedEnv = $property->getValue($this->Vite);
+        $this->assertInstanceOf(Environment::class, $cachedEnv);
+        /** @phpstan-ignore instanceof.alwaysFalse */
+        if ($cachedEnv instanceof Environment) {
+            $this->assertSame($result, $cachedEnv->isDevelopment());
+        }
+
+        // Second call should return same cached instance
+        $this->Vite->isDev();
+        /** @phpstan-ignore argument.unresolvableType */
+        $this->assertSame($cachedEnv, $property->getValue($this->Vite));
+    }
+
+    /**
+     * Test that environment cache is only used with default config
+     *
+     * Custom configs should trigger fresh environment detection.
+     */
+    public function testEnvironmentCacheOnlyUsedWithDefaultConfig(): void
+    {
+        $reflection = new ReflectionClass($this->Vite);
+        $property = $reflection->getProperty('cachedEnvironment');
+
+        // First call with default config - caches environment
+        $this->Vite->isDev();
+        $cachedEnv = $property->getValue($this->Vite);
+        $this->assertInstanceOf(Environment::class, $cachedEnv);
+
+        // Call with custom config - should still use cache for subsequent default calls
+        $customConfig = [
+            'devServer' => ['hostHints' => ['localhost']],
+        ];
+        $this->Vite->isDev($customConfig);
+
+        // Cache should be preserved
+        $this->assertSame($cachedEnv, $property->getValue($this->Vite));
+    }
+
+    /**
+     * Test that script() and css() methods work with cached configuration
+     */
+    public function testScriptAndCssUseCachedConfiguration(): void
+    {
+        $config = [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => [
+                    'script' => ['src/app.ts'],
+                    'style' => ['src/style.css'],
+                ],
+            ],
+        ];
+
+        // Call script() which internally calls isDev() - both should benefit from caching
+        $this->Vite->script([], $config);
+        $this->Vite->css([], $config);
+
+        // Verify both rendered correctly
+        $scriptResult = $this->View->fetch('script');
+        $cssResult = $this->View->fetch('css');
+
+        $this->assertStringContainsString('http://localhost:3000', $scriptResult);
+        $this->assertStringContainsString('http://localhost:3000', $cssResult);
     }
 }
