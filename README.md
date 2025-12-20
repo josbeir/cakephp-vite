@@ -536,6 +536,7 @@ VITE_PRELOAD_MODE=none  # or 'link-tag', 'link-header'
 > - Uses `rel="modulepreload"` for ES modules
 > - Automatically deduplicates URLs to prevent redundant preloads
 > - `link-header` mode is reserved for future HTTP/2 header-based preloading
+> - Requires Vite's [`build.modulePreload`](https://vite.dev/config/build-options#build-modulepreload) to be enabled (default). If you've disabled it in your Vite config, preloading won't work as import dependencies aren't tracked in the manifest.
 
 **Performance Benefits:**
 - Reduces load time by downloading dependencies in parallel
