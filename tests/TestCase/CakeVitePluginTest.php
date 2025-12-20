@@ -13,15 +13,12 @@ use CakeVite\CakeVitePlugin;
  */
 class CakeVitePluginTest extends TestCase
 {
-    /**
-     * @var \CakeVite\CakeVitePlugin
-     */
     private CakeVitePlugin $plugin;
 
     /**
      * setUp method
      */
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->plugin = new CakeVitePlugin();
@@ -30,7 +27,7 @@ class CakeVitePluginTest extends TestCase
     /**
      * tearDown method
      */
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         parent::tearDown();
         Configure::delete('CakeVite');

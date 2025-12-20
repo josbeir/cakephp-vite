@@ -22,7 +22,7 @@ final class ManifestCollection extends Collection
      */
     public function filterByType(AssetType $type): self
     {
-        return new self($this->filter(fn(ManifestEntry $entry) => $entry->getAssetType() === $type));
+        return new self($this->filter(fn(ManifestEntry $entry): bool => $entry->getAssetType() === $type));
     }
 
     /**
@@ -30,7 +30,7 @@ final class ManifestCollection extends Collection
      */
     public function filterEntries(): self
     {
-        return new self($this->filter(fn(ManifestEntry $entry) => $entry->isEntry));
+        return new self($this->filter(fn(ManifestEntry $entry): bool => $entry->isEntry));
     }
 
     /**
@@ -43,7 +43,7 @@ final class ManifestCollection extends Collection
     {
         $patterns = (array)$patterns;
 
-        return new self($this->filter(function (ManifestEntry $entry) use ($patterns, $property) {
+        return new self($this->filter(function (ManifestEntry $entry) use ($patterns, $property): bool {
             foreach ($patterns as $pattern) {
                 if ($entry->matches($pattern, $property)) {
                     return true;
@@ -61,7 +61,7 @@ final class ManifestCollection extends Collection
     {
         $items = $this->toArray();
 
-        usort($items, function (ManifestEntry $a, ManifestEntry $b) {
+        usort($items, function (ManifestEntry $a, ManifestEntry $b): int {
             $aType = $a->getScriptType();
             $bType = $b->getScriptType();
 

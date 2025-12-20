@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CakeVite\Service;
 
 use CakeVite\Enum\AssetType;
+use CakeVite\Enum\ScriptType;
 use CakeVite\Exception\ConfigurationException;
 use CakeVite\ValueObject\AssetTag;
 use CakeVite\ValueObject\ViteConfig;
@@ -132,7 +133,7 @@ final class AssetService
 
             if ($scriptType?->isModule()) {
                 $attributes['type'] = 'module';
-            } elseif ($scriptType !== null) {
+            } elseif ($scriptType instanceof ScriptType) {
                 $attributes['nomodule'] = true;
             }
 

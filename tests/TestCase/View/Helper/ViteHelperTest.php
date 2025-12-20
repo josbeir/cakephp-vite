@@ -16,12 +16,13 @@ use CakeVite\View\Helper\ViteHelper;
 class ViteHelperTest extends TestCase
 {
     protected ViteHelper $Vite;
+
     protected View $View;
 
     /**
      * setUp method
      */
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -34,7 +35,7 @@ class ViteHelperTest extends TestCase
     /**
      * tearDown method
      */
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         parent::tearDown();
     }

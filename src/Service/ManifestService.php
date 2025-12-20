@@ -29,21 +29,21 @@ final class ManifestService
 
         if (!is_readable($manifestPath)) {
             throw new ManifestException(
-                "Manifest file not found or not readable at: {$manifestPath}. " .
+                sprintf('Manifest file not found or not readable at: %s. ', $manifestPath) .
                 "Did you run 'npm run build' or 'vite build'?",
             );
         }
 
         $content = file_get_contents($manifestPath);
         if ($content === false) {
-            throw new ManifestException("Failed to read manifest file: {$manifestPath}");
+            throw new ManifestException('Failed to read manifest file: ' . $manifestPath);
         }
 
         try {
             $manifest = json_decode($content, false, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException $e) {
+        } catch (JsonException $jsonException) {
             throw new ManifestException(
-                "Invalid JSON in manifest file: {$manifestPath}. Error: {$e->getMessage()}",
+                sprintf('Invalid JSON in manifest file: %s. Error: %s', $manifestPath, $jsonException->getMessage()),
             );
         }
 

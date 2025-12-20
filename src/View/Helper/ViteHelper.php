@@ -228,7 +228,7 @@ class ViteHelper extends Helper
      */
     private function getAssetService(): AssetService
     {
-        if ($this->assetService === null) {
+        if (!$this->assetService instanceof AssetService) {
             $this->assetService = new AssetService(
                 new EnvironmentService($this->getView()->getRequest()),
                 new ManifestService(),

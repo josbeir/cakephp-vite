@@ -105,7 +105,7 @@ final readonly class ManifestEntry
     public function getDependentCssUrls(): array
     {
         return array_map(
-            fn(string $file) => (
+            fn(string $file): string => (
                 $this->buildDirectory ? '/' . trim($this->buildDirectory, '/') : ''
             ) . '/' . ltrim($file, '/'),
             $this->css,
