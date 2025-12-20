@@ -81,8 +81,15 @@ class ViteHelper extends Helper
      */
     public function script(array|string $options = [], array|ViteConfig|null $config = null): void
     {
-        $config = $this->resolveConfig($config);
         $options = $this->normalizeOptions($options);
+
+        // Handle preload option override
+        if (isset($options['preload'])) {
+            $config = $this->mergePreloadOption($config, $options['preload']);
+            unset($options['preload']); // Remove from options after merging into config
+        }
+
+        $config = $this->resolveConfig($config);
 
         $block = $options['block'] ?? $config->scriptBlock;
         $cssBlock = $options['cssBlock'] ?? $config->cssBlock;
@@ -244,6 +251,31 @@ class ViteHelper extends Helper
                 $this->Html->css($pluginPrefix . $cssUrl, ['block' => $cssBlock]);
             }
         }
+    }
+
+    /**
+     * Merge preload option into configuration
+     *
+     * @param \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null $config Configuration
+     * @param string $preloadMode Preload mode (none, link-tag, link-header)
+     * @return \CakeVite\ValueObject\ViteConfig|array<string, mixed>
+     */
+    private function mergePreloadOption(
+        array|ViteConfig|null $config,
+        string $preloadMode,
+    ): array|ViteConfig {
+        if ($config instanceof ViteConfig) {
+            return $config->merge(['preload' => $preloadMode]);
+        }
+
+        if (is_array($config)) {
+            $config['preload'] = $preloadMode;
+
+            return $config;
+        }
+
+        // Null config - return array with preload option
+        return ['preload' => $preloadMode];
     }
 
     /**

@@ -47,6 +47,7 @@ A [Vite.js](https://vitejs.dev/) integration for CakePHP 5.0+ applications. Seam
 - 🔧 **Flexible Configuration**: Customize dev server URLs, manifest paths, and more
 - 🎨 **CSS Extraction**: Automatically includes CSS dependencies from JavaScript entries in production
 - ⚡ **HMR Support**: Full Hot Module Replacement support in development mode
+- 🏎️ **Modulepreload Support**: Automatic preloading of dependencies for faster load times in code-split applications
 - ✅ **Type-Safe**: 100% type coverage with PHPStan level 8
 - 🧪 **Well Tested**: 95%+ code coverage with comprehensive unit and integration tests
 
@@ -200,6 +201,10 @@ return [
             // Output directory (relative to webroot)
             'outDirectory' => false,  // or 'dist', 'build', etc.
         ],
+
+        // Modulepreload support for faster loading (production only)
+        // Options: 'none', 'link-tag', 'link-header'
+        'preload' => env('VITE_PRELOAD_MODE', 'link-tag'),
 
         // Force production mode (ignores environment detection)
         'forceProductionMode' => false,
@@ -458,6 +463,65 @@ $this->Vite->script([
 <!-- In layout -->
 <?= $this->fetch('custom_scripts') ?>
 ```
+
+### Preloading Assets
+
+CakeVite supports `modulepreload` to improve load times for applications with code splitting. Preloading hints to the browser which modules will be needed soon, allowing parallel downloads.
+
+**Enabled by Default:**
+```php
+<?php
+// Preloading is enabled by default in production
+$this->Vite->script(['files' => ['src/main.js']]);
+?>
+```
+
+**Output in production:**
+```html
+<!-- Dependencies are preloaded before the main script -->
+<link rel="modulepreload" href="/assets/vendor-def456.js">
+<link rel="modulepreload" href="/assets/utils-ghi789.js">
+<script type="module" src="/assets/app-abc123.js"></script>
+```
+
+**Disable Preloading:**
+```php
+<?php
+// Disable preloading for a specific call
+$this->Vite->script([
+    'files' => ['src/main.js'],
+    'preload' => 'none'
+]);
+?>
+```
+
+**Configure Globally:**
+```php
+// config/app_vite.php
+return [
+    'CakeVite' => [
+        // Options: 'none', 'link-tag', 'link-header'
+        'preload' => 'none',  // Disable preloading globally
+    ],
+];
+```
+
+**Environment Variable:**
+```bash
+# .env
+VITE_PRELOAD_MODE=none  # or 'link-tag', 'link-header'
+```
+
+> [!NOTE]
+> - Preloading only works in **production mode** (development mode uses dev server, no manifest)
+> - Uses `rel="modulepreload"` for ES modules
+> - Automatically deduplicates URLs to prevent redundant preloads
+> - `link-header` mode is reserved for future HTTP/2 header-based preloading
+
+**Performance Benefits:**
+- Reduces load time by downloading dependencies in parallel
+- Particularly beneficial for code-split applications
+- Browser can start downloading imports while parsing main script
 
 ### Check Current Mode
 

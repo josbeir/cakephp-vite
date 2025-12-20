@@ -251,4 +251,47 @@ class ManifestEntryTest extends TestCase
         $reflection = new ReflectionClass($entry);
         $this->assertTrue($reflection->isReadOnly());
     }
+
+    /**
+     * Test getImportUrls returns import URLs
+     */
+    public function testGetImportUrlsReturnsImportUrls(): void
+    {
+        $data = new stdClass();
+        $data->file = 'assets/app.js';
+        $data->imports = ['assets/vendor.js', 'assets/utils.js'];
+
+        $entry = ManifestEntry::fromManifestData('src/app.ts', $data, null);
+
+        $expected = ['/assets/vendor.js', '/assets/utils.js'];
+        $this->assertSame($expected, $entry->getImportUrls());
+    }
+
+    /**
+     * Test getImportUrls with no imports returns empty array
+     */
+    public function testGetImportUrlsWithNoImportsReturnsEmptyArray(): void
+    {
+        $data = new stdClass();
+        $data->file = 'assets/app.js';
+
+        $entry = ManifestEntry::fromManifestData('src/app.ts', $data, null);
+
+        $this->assertSame([], $entry->getImportUrls());
+    }
+
+    /**
+     * Test getImportUrls includes build directory
+     */
+    public function testGetImportUrlsIncludesBuildDirectory(): void
+    {
+        $data = new stdClass();
+        $data->file = 'assets/app.js';
+        $data->imports = ['assets/vendor.js'];
+
+        $entry = ManifestEntry::fromManifestData('src/app.ts', $data, 'build');
+
+        $expected = ['/build/assets/vendor.js'];
+        $this->assertSame($expected, $entry->getImportUrls());
+    }
 }

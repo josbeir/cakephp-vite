@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CakeVite\Test\TestCase\ValueObject;
 
+use CakeVite\Enum\PreloadMode;
 use CakeVite\ValueObject\ViteConfig;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -39,6 +40,7 @@ class ViteConfigTest extends TestCase
                 'script' => 'js',
                 'css' => 'styles',
             ],
+            'preload' => 'none',
         ]);
 
         $this->assertSame('http://localhost:5173', $config->devServerUrl);
@@ -52,6 +54,7 @@ class ViteConfigTest extends TestCase
         $this->assertSame('prod', $config->productionModeHint);
         $this->assertSame('js', $config->scriptBlock);
         $this->assertSame('styles', $config->cssBlock);
+        $this->assertSame(PreloadMode::None, $config->preloadMode);
     }
 
     /**
@@ -72,6 +75,7 @@ class ViteConfigTest extends TestCase
         $this->assertSame('vprod', $config->productionModeHint);
         $this->assertSame('script', $config->scriptBlock);
         $this->assertSame('css', $config->cssBlock);
+        $this->assertSame(PreloadMode::LinkTag, $config->preloadMode);
     }
 
     /**

@@ -7,6 +7,7 @@ use CakeVite\Enum\AssetType;
 use CakeVite\Enum\ScriptType;
 use CakeVite\Exception\ConfigurationException;
 use CakeVite\ValueObject\AssetTag;
+use CakeVite\ValueObject\ManifestEntry;
 use CakeVite\ValueObject\ViteConfig;
 
 /**
@@ -126,7 +127,17 @@ final class AssetService
 
         $tags = [];
         $pluginPrefix = $config->pluginName ? $config->pluginName . '.' : '';
+        $alreadyPreloaded = [];
 
+        // Generate preload tags first (if enabled)
+        if (!$config->preloadMode->isNone()) {
+            foreach ($entries as $entry) {
+                $preloadTags = $this->generatePreloadTags($entry, $config, $alreadyPreloaded);
+                $tags = array_merge($tags, $preloadTags);
+            }
+        }
+
+        // Generate main script tags
         foreach ($entries as $entry) {
             $scriptType = $entry->getScriptType();
             $attributes = $options['attributes'] ?? [];
@@ -142,6 +153,43 @@ final class AssetService
                 type: AssetType::Script,
                 attributes: $attributes,
             );
+        }
+
+        return $tags;
+    }
+
+    /**
+     * Generate preload tags for an entry's imports
+     *
+     * @param \CakeVite\ValueObject\ManifestEntry $entry Manifest entry
+     * @param \CakeVite\ValueObject\ViteConfig $config Configuration
+     * @param array<string, bool> $alreadyPreloaded Track preloaded URLs to avoid duplicates
+     * @return array<\CakeVite\ValueObject\AssetTag>
+     */
+    private function generatePreloadTags(
+        ManifestEntry $entry,
+        ViteConfig $config,
+        array &$alreadyPreloaded,
+    ): array {
+        $tags = [];
+        $pluginPrefix = $config->pluginName ? $config->pluginName . '.' : '';
+
+        foreach ($entry->getImportUrls() as $importUrl) {
+            $fullUrl = $pluginPrefix . $importUrl;
+
+            if (isset($alreadyPreloaded[$fullUrl])) {
+                continue;
+            }
+
+            $tags[] = new AssetTag(
+                url: $fullUrl,
+                type: AssetType::Script,
+                attributes: ['rel' => 'modulepreload'],
+                isPreload: true,
+                preloadType: 'modulepreload',
+            );
+
+            $alreadyPreloaded[$fullUrl] = true;
         }
 
         return $tags;

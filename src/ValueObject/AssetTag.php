@@ -18,11 +18,15 @@ final readonly class AssetTag
      * @param string $url Asset URL
      * @param \CakeVite\Enum\AssetType $type Asset type (script or style)
      * @param array<string, mixed> $attributes HTML attributes for the tag
+     * @param bool $isPreload Whether this tag is a preload tag
+     * @param string|null $preloadType Type of preload ('preload' or 'modulepreload')
      */
     public function __construct(
         public string $url,
         public AssetType $type,
         public array $attributes = [],
+        public bool $isPreload = false,
+        public ?string $preloadType = null,
     ) {
     }
 }

@@ -9,6 +9,7 @@ use CakeVite\Exception\ConfigurationException;
 use CakeVite\Service\AssetService;
 use CakeVite\Service\EnvironmentService;
 use CakeVite\Service\ManifestService;
+use CakeVite\ValueObject\AssetTag;
 use CakeVite\ValueObject\ViteConfig;
 use PHPUnit\Framework\TestCase;
 
@@ -140,6 +141,7 @@ class AssetServiceTest extends TestCase
     {
         $config = ViteConfig::fromArray([
             'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json'],
+            'preload' => 'none', // Disable preload for this test
         ]);
 
         $service = new AssetService($this->createProdEnvironmentService(), $this->manifestService);
@@ -336,5 +338,114 @@ class AssetServiceTest extends TestCase
         $tags = $service->generateScriptTags($config);
 
         $this->assertStringStartsWith('/dist/', $tags[0]->url);
+    }
+
+    /**
+     * Test generateScriptTags with preload mode none does not generate preload tags
+     */
+    public function testGenerateScriptTagsWithPreloadNone(): void
+    {
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-with-imports.json'],
+            'preload' => 'none',
+        ]);
+
+        $service = new AssetService($this->createProdEnvironmentService(), $this->manifestService);
+        $tags = $service->generateScriptTags($config);
+
+        // Should only have script tags, no preload tags
+        $preloadTags = array_filter($tags, fn(AssetTag $tag): bool => $tag->isPreload);
+        $this->assertCount(0, $preloadTags);
+    }
+
+    /**
+     * Test generateScriptTags with preload mode link-tag generates preload tags
+     */
+    public function testGenerateScriptTagsWithPreloadLinkTag(): void
+    {
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-with-imports.json'],
+            'preload' => 'link-tag',
+        ]);
+
+        $service = new AssetService($this->createProdEnvironmentService(), $this->manifestService);
+        $tags = $service->generateScriptTags($config);
+
+        // Should have both preload and script tags
+        $preloadTags = array_filter($tags, fn(AssetTag $tag): bool => $tag->isPreload);
+        $this->assertGreaterThan(0, count($preloadTags));
+    }
+
+    /**
+     * Test preload tags use modulepreload for JS
+     */
+    public function testPreloadTagsUseModulepreloadForJs(): void
+    {
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-with-imports.json'],
+            'preload' => 'link-tag',
+        ]);
+
+        $service = new AssetService($this->createProdEnvironmentService(), $this->manifestService);
+        $tags = $service->generateScriptTags($config);
+
+        $preloadTags = array_filter($tags, fn(AssetTag $tag): bool => $tag->isPreload);
+        foreach ($preloadTags as $tag) {
+            $this->assertSame('modulepreload', $tag->preloadType);
+        }
+    }
+
+    /**
+     * Test preload tags not generated in development mode
+     */
+    public function testPreloadTagsNotGeneratedInDevelopmentMode(): void
+    {
+        $config = ViteConfig::fromArray([
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'entries' => ['script' => ['app.ts']],
+            ],
+            'preload' => 'link-tag',
+        ]);
+
+        $service = new AssetService($this->createDevEnvironmentService(), $this->manifestService);
+        $tags = $service->generateScriptTags($config);
+
+        // Development mode should never have preload tags
+        $preloadTags = array_filter($tags, fn(AssetTag $tag): bool => $tag->isPreload);
+        $this->assertCount(0, $preloadTags);
+    }
+
+    /**
+     * Test preload tags generated before main script tag
+     */
+    public function testPreloadTagsGeneratedBeforeMainScriptTag(): void
+    {
+        $config = ViteConfig::fromArray([
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-with-imports.json'],
+            'preload' => 'link-tag',
+        ]);
+
+        $service = new AssetService($this->createProdEnvironmentService(), $this->manifestService);
+        $tags = $service->generateScriptTags($config);
+
+        // Find first preload and first script tag positions
+        $firstPreloadIndex = null;
+        $firstScriptIndex = null;
+
+        foreach ($tags as $index => $tag) {
+            if ($tag->isPreload && $firstPreloadIndex === null) {
+                $firstPreloadIndex = $index;
+            }
+
+            if (!$tag->isPreload && $firstScriptIndex === null) {
+                $firstScriptIndex = $index;
+            }
+        }
+
+        // Preload tags should come before script tags
+        if ($firstPreloadIndex !== null && $firstScriptIndex !== null) {
+            $this->assertLessThan($firstScriptIndex, $firstPreloadIndex);
+        }
     }
 }

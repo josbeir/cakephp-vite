@@ -113,6 +113,21 @@ final readonly class ManifestEntry
     }
 
     /**
+     * Get URLs for imported modules
+     *
+     * @return array<string>
+     */
+    public function getImportUrls(): array
+    {
+        return array_map(
+            fn(string $importKey): string => (
+                $this->buildDirectory ? '/' . trim($this->buildDirectory, '/') : ''
+            ) . '/' . ltrim($importKey, '/'),
+            $this->imports,
+        );
+    }
+
+    /**
      * Check if this entry matches a pattern
      *
      * @param string $pattern Pattern to match

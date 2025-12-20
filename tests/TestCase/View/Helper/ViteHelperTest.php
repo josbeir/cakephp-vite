@@ -437,4 +437,65 @@ class ViteHelperTest extends TestCase
         $this->assertStringContainsString('http://localhost:3000', $scriptResult);
         $this->assertStringContainsString('http://localhost:3000', $cssResult);
     }
+
+    /**
+     * Test script() with preload option overrides config
+     */
+    public function testScriptWithPreloadOption(): void
+    {
+        $config = [
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-with-imports.json'],
+            'preload' => 'link-tag', // Default to preload
+            'forceProductionMode' => true,
+        ];
+
+        // Override to disable preload
+        $this->Vite->script(['files' => ['src/app.ts'], 'preload' => 'none'], $config);
+
+        $result = $this->View->fetch('script');
+
+        // Should not contain preload tags
+        $this->assertStringNotContainsString('modulepreload', $result);
+    }
+
+    /**
+     * Test script() preload defaults to config setting
+     */
+    public function testScriptPreloadDefaultsToConfigSetting(): void
+    {
+        $config = [
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-with-imports.json'],
+            'preload' => 'link-tag',
+            'forceProductionMode' => true,
+        ];
+
+        $this->Vite->script(['files' => ['src/app.ts']], $config);
+
+        $result = $this->View->fetch('script');
+
+        // Should contain preload tags (default from config)
+        $this->assertStringContainsString('modulepreload', $result);
+    }
+
+    /**
+     * Test script() preload only in production mode
+     */
+    public function testScriptPreloadOnlyInProduction(): void
+    {
+        $config = [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['script' => ['src/app.ts']],
+            ],
+            'preload' => 'link-tag',
+        ];
+
+        $this->Vite->script([], $config);
+
+        $result = $this->View->fetch('script');
+
+        // Development mode should never have preload tags
+        $this->assertStringNotContainsString('modulepreload', $result);
+    }
 }

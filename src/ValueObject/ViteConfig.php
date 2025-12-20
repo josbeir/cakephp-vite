@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace CakeVite\ValueObject;
 
+use CakeVite\Enum\PreloadMode;
+
 /**
  * Immutable configuration value object
  *
@@ -24,6 +26,7 @@ final readonly class ViteConfig
      * @param string $productionModeHint Cookie/query param name for production mode hint
      * @param string $scriptBlock View block name for scripts
      * @param string $cssBlock View block name for CSS
+     * @param \CakeVite\Enum\PreloadMode $preloadMode Preload mode for module dependencies
      */
     public function __construct(
         public string $devServerUrl,
@@ -37,6 +40,7 @@ final readonly class ViteConfig
         public string $productionModeHint,
         public string $scriptBlock,
         public string $cssBlock,
+        public PreloadMode $preloadMode,
     ) {
     }
 
@@ -61,6 +65,7 @@ final readonly class ViteConfig
             productionModeHint: $config['productionModeHint'] ?? 'vprod',
             scriptBlock: $config['viewBlocks']['script'] ?? 'script',
             cssBlock: $config['viewBlocks']['css'] ?? 'css',
+            preloadMode: isset($config['preload']) ? PreloadMode::from($config['preload']) : PreloadMode::LinkTag,
         );
     }
 
@@ -118,6 +123,7 @@ final readonly class ViteConfig
                 'script' => $this->scriptBlock,
                 'css' => $this->cssBlock,
             ],
+            'preload' => $this->preloadMode->value,
         ];
     }
 }

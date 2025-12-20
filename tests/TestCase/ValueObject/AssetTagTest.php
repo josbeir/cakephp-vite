@@ -72,4 +72,52 @@ class AssetTagTest extends TestCase
         $reflection = new ReflectionClass($tag);
         $this->assertTrue($reflection->isReadOnly());
     }
+
+    /**
+     * Test AssetTag can be marked as preload
+     */
+    public function testAssetTagCanBeMarkedAsPreload(): void
+    {
+        $tag = new AssetTag(
+            url: '/assets/vendor.js',
+            type: AssetType::Script,
+            attributes: [],
+            isPreload: true,
+            preloadType: 'modulepreload',
+        );
+
+        $this->assertTrue($tag->isPreload);
+        $this->assertSame('modulepreload', $tag->preloadType);
+    }
+
+    /**
+     * Test AssetTag defaults to non-preload
+     */
+    public function testAssetTagDefaultsToNonPreload(): void
+    {
+        $tag = new AssetTag(
+            url: '/assets/app.js',
+            type: AssetType::Script,
+        );
+
+        $this->assertFalse($tag->isPreload);
+        $this->assertNull($tag->preloadType);
+    }
+
+    /**
+     * Test AssetTag preload for CSS uses 'preload'
+     */
+    public function testAssetTagPreloadForCssUsesPreload(): void
+    {
+        $tag = new AssetTag(
+            url: '/assets/style.css',
+            type: AssetType::Style,
+            attributes: [],
+            isPreload: true,
+            preloadType: 'preload',
+        );
+
+        $this->assertTrue($tag->isPreload);
+        $this->assertSame('preload', $tag->preloadType);
+    }
 }

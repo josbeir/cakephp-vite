@@ -23,6 +23,7 @@ return [
         'forceProductionMode' => false,
         'plugin' => null,  // Set to plugin name when using plugin assets
         'productionModeHint' => 'vprod',  // Cookie/query param name
+        'preload' => env('VITE_PRELOAD_MODE', 'link-tag'),  // 'none', 'link-tag', 'link-header'
         'viewBlocks' => [
             'script' => 'script',
             'css' => 'css',
