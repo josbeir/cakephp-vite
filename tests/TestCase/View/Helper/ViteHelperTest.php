@@ -281,4 +281,23 @@ class ViteHelperTest extends TestCase
         $result = $this->View->fetch('script');
         $this->assertStringContainsString('defer', $result);
     }
+
+    /**
+     * Test css method with string shorthand
+     */
+    public function testCssAcceptsStringShorthand(): void
+    {
+        $config = [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['style' => ['src/style.css']],
+            ],
+        ];
+
+        $this->Vite->css('src/style.css', $config);
+
+        $result = $this->View->fetch('css');
+        $this->assertStringContainsString('http://localhost:3000/src/style.css', $result);
+    }
 }

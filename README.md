@@ -238,6 +238,44 @@ Then reference in your config:
 
 ## Usage
 
+### Basic Syntax
+
+CakeVite supports both string shorthand and array syntax for loading assets:
+
+**String Shorthand (Simple):**
+```php
+// Single file - quick and easy
+<?php $this->Vite->script('src/main.js'); ?>
+<?php $this->Vite->css('src/style.css'); ?>
+```
+
+**Array Syntax (Full Featured):**
+```php
+// Single file with options
+<?php $this->Vite->script(['files' => ['src/main.js']]); ?>
+
+// Multiple files
+<?php
+$this->Vite->script([
+    'files' => [
+        'src/main.js',
+        'src/admin.js',
+    ]
+]);
+?>
+
+// With custom attributes
+<?php
+$this->Vite->script([
+    'files' => ['src/main.js'],
+    'attributes' => ['defer' => true]
+]);
+?>
+```
+
+> [!TIP]
+> Both `script()` and `css()` methods are void - they append tags to view blocks. Use `<?= $this->fetch('script') ?>` and `<?= $this->fetch('css') ?>` to render them in your layout.
+
 ### Development Mode
 
 In development, CakeVite automatically:
