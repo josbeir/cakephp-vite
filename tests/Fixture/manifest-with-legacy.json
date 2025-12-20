@@ -1,0 +1,31 @@
+{
+  "src/app.ts": {
+    "file": "assets/app-abc123.js",
+    "src": "src/app.ts",
+    "isEntry": true,
+    "css": ["assets/app-xyz789.css"],
+    "imports": ["_vendor-def456.js"]
+  },
+  "src/app-legacy.ts": {
+    "file": "assets/app-legacy-ghi789.js",
+    "src": "src/app-legacy.ts",
+    "isEntry": true,
+    "imports": []
+  },
+  "src/polyfills.ts": {
+    "file": "assets/polyfills-jkl012.js",
+    "src": "src/polyfills.ts",
+    "isEntry": true
+  },
+  "src/admin.ts": {
+    "file": "assets/admin-mno345.js",
+    "src": "src/admin.ts",
+    "isEntry": true,
+    "css": ["assets/admin-pqr678.css"]
+  },
+  "src/style.css": {
+    "file": "assets/style-stu901.css",
+    "src": "src/style.css",
+    "isEntry": true
+  }
+}

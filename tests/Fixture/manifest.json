@@ -1,0 +1,24 @@
+{
+  "src/app.ts": {
+    "file": "assets/app-abc123.js",
+    "src": "src/app.ts",
+    "isEntry": true,
+    "css": ["assets/app-xyz789.css"],
+    "imports": ["_vendor-def456.js"]
+  },
+  "src/admin.ts": {
+    "file": "assets/admin-ghi789.js",
+    "src": "src/admin.ts",
+    "isEntry": true,
+    "imports": []
+  },
+  "src/style.css": {
+    "file": "assets/style-jkl012.css",
+    "src": "src/style.css",
+    "isEntry": true
+  },
+  "_vendor-def456.js": {
+    "file": "assets/vendor-def456.js",
+    "isEntry": false
+  }
+}
