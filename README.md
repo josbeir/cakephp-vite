@@ -236,6 +236,66 @@ Then reference in your config:
 ],
 ```
 
+### Using with DDEV
+
+DDEV requires some additional configuration to properly expose the Vite dev server. Here's how to set it up:
+
+**1. Configure `.ddev/config.yaml` to expose port 5173 (or something else):**
+
+```yaml
+web_extra_exposed_ports:
+  - name: node-vite
+    container_port: 5173
+    http_port: 5172
+    https_port: 5173
+```
+
+**2. Create `config/app_vite.php` using DDEV environment variables:**
+
+```php
+<?php
+return [
+    'CakeVite' => [
+        'devServer' => [
+            'hostHints' => [env('DDEV_HOSTNAME', '')],
+            'url' => env('DDEV_PRIMARY_URL') . ':5173',
+        ],
+    ],
+];
+```
+
+**3. Update `vite.config.js` to use the DDEV URL:**
+
+```javascript
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  root: 'webroot',
+  base: '/',
+  build: {
+    manifest: true,
+    outDir: 'webroot/build',
+    rollupOptions: {
+      input: {
+        main: 'webroot/src/main.js'
+      }
+    }
+  },
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+    origin: `${process.env.DDEV_PRIMARY_URL.replace(/:\d+$/, "")}:5173`,
+    cors: {
+      origin: /https?:\/\/([A-Za-z0-9\-\.]+)?(\.ddev\.site)(?::\d+)?$/,
+    },
+  }
+});
+```
+
+> [!TIP]
+> DDEV automatically sets environment variables like `DDEV_HOSTNAME` and `DDEV_PRIMARY_URL`. Run `ddev exec printenv | grep DDEV` to see all available variables.
+
 ## Usage
 
 ### Basic Syntax
