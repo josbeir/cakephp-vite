@@ -170,6 +170,19 @@ return [
 ```
 
 > [!NOTE]
+> **Config entries vs. Helper files parameter:**
+> - `devServer.entries`: Default files for **development mode only**. Used when helper is called without `files` option.
+> - `files` parameter: Per-call override that works in **both development and production**. In dev, it overrides config entries. In production, it filters manifest entries.
+>
+> ```php
+> // Uses config default (src/main.js) in development
+> $this->Vite->script();
+>
+> // Override for this specific call (works in dev and production)
+> $this->Vite->script(['files' => ['src/admin.js']]);
+> ```
+
+> [!NOTE]
 > The plugin will automatically detect and load `config/app_vite.php` if it exists for backwards compatibility.
 
 ### Advanced Configuration
