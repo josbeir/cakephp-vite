@@ -48,7 +48,7 @@ class CakeVitePluginTest extends TestCase
         try {
             Configure::delete('CakeVite');
 
-            $app = $this->createMock(PluginApplicationInterface::class);
+            $app = $this->createStub(PluginApplicationInterface::class);
             $this->plugin->bootstrap($app);
 
             $this->assertTrue(Configure::check('CakeVite'));
@@ -71,7 +71,7 @@ class CakeVitePluginTest extends TestCase
     {
         Configure::delete('CakeVite');
 
-        $app = $this->createMock(PluginApplicationInterface::class);
+        $app = $this->createStub(PluginApplicationInterface::class);
         $this->plugin->bootstrap($app);
 
         // Check that app_vite.php configuration was loaded
@@ -98,7 +98,7 @@ class CakeVitePluginTest extends TestCase
         try {
             Configure::delete('CakeVite');
 
-            $app = $this->createMock(PluginApplicationInterface::class);
+            $app = $this->createStub(PluginApplicationInterface::class);
             $this->plugin->bootstrap($app);
 
             // Should still load default configuration

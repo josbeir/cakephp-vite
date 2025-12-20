@@ -467,7 +467,7 @@ Contributions are welcome! Please:
 1. Fork the repository
 2. Create a feature branch
 3. Write tests for your changes
-4. Ensure all quality checks pass (`composer cs-check && composer stan && composer test`)
+4. Ensure all quality checks pass (`composer cs-check && composer phpstan && composer test`)
 5. Submit a pull request
 
 ## License
