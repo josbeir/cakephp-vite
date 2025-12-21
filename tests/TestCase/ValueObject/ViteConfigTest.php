@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CakeVite\Test\TestCase\ValueObject;
 
+use Cake\Core\Configure;
 use CakeVite\Enum\PreloadMode;
 use CakeVite\ValueObject\ViteConfig;
 use PHPUnit\Framework\TestCase;
@@ -169,5 +170,83 @@ class ViteConfigTest extends TestCase
         // Defaults should still apply
         $this->assertSame(['localhost', '127.0.0.1', '.test', '.local'], $config->devServerHostHints);
         $this->assertFalse($config->forceProductionMode);
+    }
+
+    /**
+     * Test loading named config with inheritance from default
+     */
+    public function testFromArrayWithNamedConfig(): void
+    {
+        Configure::write('CakeVite', [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'entries' => ['script' => ['src/main.js']],
+            ],
+            'build' => [
+                'manifestPath' => WWW_ROOT . 'manifest.json',
+            ],
+            'configs' => [
+                'admin' => [
+                    'devServer' => [
+                        'url' => 'http://localhost:3001',
+                        'entries' => ['script' => ['admin/main.js']],
+                    ],
+                    'build' => [
+                        'outDirectory' => 'admin',
+                    ],
+                ],
+            ],
+        ]);
+
+        $config = ViteConfig::fromArray([], 'admin');
+
+        // Should inherit default URL is overridden
+        $this->assertSame('http://localhost:3001', $config->devServerUrl);
+        // Should inherit default manifest path (not overridden in named config)
+        $this->assertStringContainsString('manifest.json', $config->manifestPath);
+        // Should use named config's outDirectory
+        $this->assertSame('admin', $config->buildDirectory);
+        // Should use named config's entries
+        $this->assertSame(['admin/main.js'], $config->scriptEntries);
+    }
+
+    /**
+     * Test loading non-existent named config falls back to default
+     */
+    public function testFromArrayWithNonExistentNamedConfig(): void
+    {
+        Configure::write('CakeVite', [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+            ],
+        ]);
+
+        $config = ViteConfig::fromArray([], 'nonexistent');
+
+        // Should use default config
+        $this->assertSame('http://localhost:3000', $config->devServerUrl);
+    }
+
+    /**
+     * Test named config can be passed directly in array
+     */
+    public function testFromArrayWithConfigKeyInArray(): void
+    {
+        Configure::write('CakeVite', [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+            ],
+            'configs' => [
+                'marketing' => [
+                    'devServer' => [
+                        'url' => 'http://localhost:3002',
+                    ],
+                ],
+            ],
+        ]);
+
+        $config = ViteConfig::fromArray(['config' => 'marketing']);
+
+        $this->assertSame('http://localhost:3002', $config->devServerUrl);
     }
 }

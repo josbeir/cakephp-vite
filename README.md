@@ -580,6 +580,50 @@ VITE_CACHE_CONFIG=default
 > [!TIP]
 > Caching is disabled by default. Enable it in production for ~5-10x faster manifest reads (~0.1ms vs ~2-7ms per request).
 
+### Multiple Configurations
+
+Use named configurations for different parts of your application (admin panel, marketing site, etc.).
+
+**Define Named Configs:**
+```php
+// config/app_vite.php
+return [
+    'CakeVite' => [
+        'devServer' => ['url' => 'http://localhost:3000'],
+        'build' => ['manifestPath' => WWW_ROOT . 'manifest.json'],
+
+        'configs' => [
+            'admin' => [
+                'devServer' => ['url' => 'http://localhost:3001'],
+                'build' => [
+                    'outDirectory' => 'admin',
+                    'manifestPath' => WWW_ROOT . 'admin' . DS . 'manifest.json',
+                ],
+            ],
+            'marketing' => [
+                'devServer' => ['url' => 'http://localhost:3002'],
+                'build' => ['outDirectory' => 'marketing'],
+            ],
+        ],
+    ],
+];
+```
+
+**Use in Templates:**
+```php
+<!-- Use 'admin' config -->
+<?php $this->Vite->script(['files' => ['src/admin.ts'], 'config' => 'admin']); ?>
+<?php $this->Vite->css(['files' => ['src/admin.css'], 'config' => 'admin']); ?>
+
+<!-- Use 'marketing' config -->
+<?php $this->Vite->script(['config' => 'marketing']); ?>
+```
+
+**Configuration Inheritance:**
+- Named configs inherit from default config
+- Override only what you need
+- Useful for multi-tenant or multi-section applications
+
 ### Check Current Mode
 
 Check if running in development mode:

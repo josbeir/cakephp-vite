@@ -82,6 +82,7 @@ class ViteHelper extends Helper
     public function script(array|string $options = [], array|ViteConfig|null $config = null): void
     {
         $options = $this->normalizeOptions($options);
+        $config = $this->extractConfigFromOptions($options, $config);
 
         // Handle preload option override
         if (isset($options['preload'])) {
@@ -117,8 +118,10 @@ class ViteHelper extends Helper
      */
     public function css(array|string $options = [], array|ViteConfig|null $config = null): void
     {
-        $config = $this->resolveConfig($config);
         $options = $this->normalizeOptions($options);
+        $config = $this->extractConfigFromOptions($options, $config);
+
+        $config = $this->resolveConfig($config);
 
         $block = $options['block'] ?? $config->cssBlock;
 
@@ -224,6 +227,35 @@ class ViteHelper extends Helper
         }
 
         return $options;
+    }
+
+    /**
+     * Extract named config from options
+     *
+     * @param array<string, mixed> $options Options (modified by reference to remove 'config' key)
+     * @param \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null $config Configuration
+     * @return \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null Modified configuration
+     */
+    private function extractConfigFromOptions(
+        array &$options,
+        array|ViteConfig|null $config,
+    ): array|ViteConfig|null {
+        if (!isset($options['config']) || !is_string($options['config'])) {
+            return $config;
+        }
+
+        $configName = $options['config'];
+        unset($options['config']);
+
+        $config = $config ?? [];
+        if (is_array($config)) {
+            $config['config'] = $configName;
+        } else {
+            // If config is ViteConfig object, load named config from Configure
+            $config = ViteConfig::fromArray([], $configName);
+        }
+
+        return $config;
     }
 
     /**

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CakeVite\ValueObject;
 
+use Cake\Core\Configure;
 use CakeVite\Enum\PreloadMode;
 
 /**
@@ -49,14 +50,27 @@ final readonly class ViteConfig
     }
 
     /**
-     * Create from array configuration
+     * Create from array configuration with named config support
      *
-     * Uses ?? operator for efficient default values instead of Hash::get
+     * Uses ?? operator for efficient default values instead of Hash::get.
+     * Supports named configurations that inherit from default config.
      *
      * @param array<string, mixed> $config Configuration array
+     * @param string|null $configName Optional named config to load from Configure::read('CakeVite.configs.{name}')
      */
-    public static function fromArray(array $config): self
+    public static function fromArray(array $config, ?string $configName = null): self
     {
+        // Handle 'config' key in array (for helper option)
+        if (isset($config['config']) && is_string($config['config'])) {
+            $configName = $config['config'];
+            unset($config['config']);
+        }
+
+        // Load named config if specified
+        if ($configName !== null) {
+            $config = self::loadNamedConfig($configName, $config);
+        }
+
         return new self(
             devServerUrl: $config['devServer']['url'] ?? 'http://localhost:3000',
             devServerHostHints: $config['devServer']['hostHints'] ?? ['localhost', '127.0.0.1', '.test', '.local'],
@@ -73,6 +87,55 @@ final readonly class ViteConfig
             cacheConfig: $config['cache']['config'] ?? false,
             cacheInDevelopment: $config['cache']['development'] ?? false,
         );
+    }
+
+    /**
+     * Load named configuration with inheritance from default
+     *
+     * @param string $configName Name of the configuration
+     * @param array<string, mixed> $overrides Additional overrides to apply
+     * @return array<string, mixed> Merged configuration
+     */
+    private static function loadNamedConfig(string $configName, array $overrides = []): array
+    {
+        // Load default config from Configure
+        $defaultConfig = Configure::read('CakeVite', []);
+
+        // Load named config
+        $namedConfig = $defaultConfig['configs'][$configName] ?? [];
+
+        // Remove 'configs' key from default to avoid recursion
+        unset($defaultConfig['configs']);
+
+        // Merge: default -> named -> overrides
+        $merged = self::arrayMergeRecursiveDistinct($defaultConfig, $namedConfig);
+
+        return self::arrayMergeRecursiveDistinct($merged, $overrides);
+    }
+
+    /**
+     * Recursively merge arrays without converting non-numeric keys to arrays
+     *
+     * Unlike array_merge_recursive, this preserves array values instead of
+     * converting them to nested arrays.
+     *
+     * @param array<string, mixed> $array1 Base array
+     * @param array<string, mixed> $array2 Array to merge
+     * @return array<string, mixed> Merged array
+     */
+    private static function arrayMergeRecursiveDistinct(array $array1, array $array2): array
+    {
+        $merged = $array1;
+
+        foreach ($array2 as $key => $value) {
+            if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
+                $merged[$key] = self::arrayMergeRecursiveDistinct($merged[$key], $value);
+            } else {
+                $merged[$key] = $value;
+            }
+        }
+
+        return $merged;
     }
 
     /**

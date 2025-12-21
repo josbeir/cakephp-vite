@@ -36,5 +36,19 @@ return [
             'script' => 'script',
             'css' => 'css',
         ],
+
+        // Named configurations for multiple Vite builds
+        // Inherit from default config, override specific keys
+        /*
+        'configs' => [
+            'admin' => [
+                'devServer' => ['url' => 'http://localhost:3001'],
+                'build' => [
+                    'outDirectory' => 'admin',
+                    'manifestPath' => WWW_ROOT . 'admin' . DS . 'manifest.json',
+                ],
+            ],
+        ],
+        */
     ],
 ];

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CakeVite\Test\TestCase\View\Helper;
 
+use Cake\Core\Configure;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
 use Cake\View\View;
@@ -497,5 +498,108 @@ class ViteHelperTest extends TestCase
 
         // Development mode should never have preload tags
         $this->assertStringNotContainsString('modulepreload', $result);
+    }
+
+    /**
+     * Test script with named config option
+     */
+    public function testScriptWithNamedConfig(): void
+    {
+        Configure::write('CakeVite', [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['script' => ['src/main.ts']],
+            ],
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+            'configs' => [
+                'admin' => [
+                    'devServer' => [
+                        'url' => 'http://localhost:3001',
+                    ],
+                    'build' => [
+                        'outDirectory' => 'admin',
+                    ],
+                ],
+            ],
+        ]);
+
+        // Use named config via option
+        $this->Vite->script(['config' => 'admin']);
+
+        $result = $this->View->fetch('script');
+
+        // Should use admin config (outDirectory affects asset URLs)
+        $this->assertStringContainsString('/admin/', $result);
+    }
+
+    /**
+     * Test CSS with named config option
+     */
+    public function testCssWithNamedConfig(): void
+    {
+        Configure::write('CakeVite', [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['style' => ['src/style.css']],
+            ],
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+            'configs' => [
+                'marketing' => [
+                    'build' => [
+                        'outDirectory' => 'marketing',
+                    ],
+                ],
+            ],
+        ]);
+
+        // Use named config via option
+        $this->Vite->css(['config' => 'marketing']);
+
+        $result = $this->View->fetch('css');
+
+        // Should use marketing config
+        $this->assertStringContainsString('/marketing/', $result);
+    }
+
+    /**
+     * Test named config with direct config parameter
+     */
+    public function testScriptWithNamedConfigDirect(): void
+    {
+        Configure::write('CakeVite', [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['script' => ['src/main.ts']],
+            ],
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+            'configs' => [
+                'api' => [
+                    'build' => [
+                        'outDirectory' => 'api',
+                    ],
+                ],
+            ],
+        ]);
+
+        // Pass named config as ViteConfig parameter
+        $config = ViteConfig::fromArray([], 'api');
+        $this->Vite->script([], $config);
+
+        $result = $this->View->fetch('script');
+
+        // Should use api config
+        $this->assertStringContainsString('/api/', $result);
     }
 }
