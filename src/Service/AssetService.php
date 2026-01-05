@@ -7,6 +7,7 @@ use CakeVite\Enum\AssetType;
 use CakeVite\Enum\ScriptType;
 use CakeVite\Exception\ConfigurationException;
 use CakeVite\ValueObject\AssetTag;
+use CakeVite\ValueObject\ManifestCollection;
 use CakeVite\ValueObject\ManifestEntry;
 use CakeVite\ValueObject\ViteConfig;
 
@@ -111,17 +112,18 @@ final class AssetService
     private function generateProductionScriptTags(ViteConfig $config, array $options): array
     {
         $env = $this->environmentService->detect($config);
-        $manifest = $this->manifestService->load($config, $env);
+        $fullManifest = $this->manifestService->load($config, $env);
 
-        // Apply filters if specified
+        // Apply filters if specified (for selecting which entries to render)
+        $manifestForEntries = $fullManifest;
         if (!empty($options['files'])) {
-            $manifest = $manifest->filterByPattern($options['files']);
+            $manifestForEntries = $manifestForEntries->filterByPattern($options['files']);
         } elseif (!empty($options['filter'])) {
-            $manifest = $manifest->filterByPattern($options['filter']);
+            $manifestForEntries = $manifestForEntries->filterByPattern($options['filter']);
         }
 
         // Filter to script entries and sort by load order
-        $entries = $manifest
+        $entries = $manifestForEntries
             ->filterByType(AssetType::Script)
             ->filterEntries()
             ->sortByLoadOrder();
@@ -131,9 +133,10 @@ final class AssetService
         $alreadyPreloaded = [];
 
         // Generate preload tags first (if enabled)
+        // Use full manifest to resolve import keys
         if (!$config->preloadMode->isNone()) {
             foreach ($entries as $entry) {
-                $preloadTags = $this->generatePreloadTags($entry, $config, $alreadyPreloaded);
+                $preloadTags = $this->generatePreloadTags($entry, $fullManifest, $config, $alreadyPreloaded);
                 $tags = array_merge($tags, $preloadTags);
             }
         }
@@ -163,19 +166,22 @@ final class AssetService
      * Generate preload tags for an entry's imports
      *
      * @param \CakeVite\ValueObject\ManifestEntry $entry Manifest entry
+     * @param \CakeVite\ValueObject\ManifestCollection $manifest Full manifest for resolving imports
      * @param \CakeVite\ValueObject\ViteConfig $config Configuration
      * @param array<string, bool> $alreadyPreloaded Track preloaded URLs to avoid duplicates
      * @return array<\CakeVite\ValueObject\AssetTag>
      */
     private function generatePreloadTags(
         ManifestEntry $entry,
+        ManifestCollection $manifest,
         ViteConfig $config,
         array &$alreadyPreloaded,
     ): array {
         $tags = [];
         $pluginPrefix = $config->pluginName ? $config->pluginName . '.' : '';
 
-        foreach ($entry->getImportUrls() as $importUrl) {
+        // Resolve import keys to actual file URLs using the manifest
+        foreach ($manifest->resolveImportUrls($entry->imports) as $importUrl) {
             $fullUrl = $pluginPrefix . $importUrl;
 
             if (isset($alreadyPreloaded[$fullUrl])) {

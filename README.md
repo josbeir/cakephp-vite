@@ -582,7 +582,7 @@ VITE_CACHE_CONFIG=default
 ```
 
 > [!TIP]
-> Caching is disabled by default. Enable it in production for ~5-10x faster manifest reads (~0.1ms vs ~2-7ms per request).
+> Enabling caching could improve manifest read performance, particularly when using memory-based solutions such as Redis that avoid file I/O operations.
 
 ### Multiple Configurations
 

@@ -602,4 +602,129 @@ class ViteHelperTest extends TestCase
         // Should use api config
         $this->assertStringContainsString('/api/', $result);
     }
+
+    /**
+     * Test preload link tags render with additional attributes
+     */
+    public function testPreloadLinkTagsRenderWithAttributes(): void
+    {
+        $config = [
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-with-imports.json'],
+            'preload' => 'link-tag',
+            'forceProductionMode' => true,
+        ];
+
+        // Mock AssetService to inject attributes
+        $this->Vite->script(['files' => ['src/app.ts']], $config);
+
+        $result = $this->View->fetch('script');
+
+        // Should contain preload tags
+        $this->assertStringContainsString('modulepreload', $result);
+        $this->assertStringContainsString('<link rel="modulepreload"', $result);
+    }
+
+    /**
+     * Test preload link tags handle crossorigin attribute
+     */
+    public function testPreloadLinkTagsWithCrossorigin(): void
+    {
+        Configure::write('CakeVite', [
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-with-imports.json'],
+            'preload' => 'link-tag',
+            'forceProductionMode' => true,
+        ]);
+
+        $this->Vite->script(['files' => ['src/app.ts']]);
+
+        $result = $this->View->fetch('script');
+
+        // Verify preload tags are generated
+        $this->assertStringContainsString('modulepreload', $result);
+    }
+
+    /**
+     * Test buildPreloadLinkTag filters out rel attribute
+     */
+    public function testBuildPreloadLinkTagFiltersRelAttribute(): void
+    {
+        // Use reflection to test private method
+        $reflection = new ReflectionClass($this->Vite);
+        $method = $reflection->getMethod('buildPreloadLinkTag');
+
+        $result = $method->invoke(
+            $this->Vite,
+            'modulepreload',
+            '/assets/vendor.js',
+            ['rel' => 'should-be-filtered', 'crossorigin' => 'anonymous'],
+        );
+
+        // Should only have modulepreload from parameter, not from attributes
+        $this->assertStringContainsString('rel="modulepreload"', $result);
+        $this->assertStringNotContainsString('should-be-filtered', $result);
+        $this->assertStringContainsString('crossorigin="anonymous"', $result);
+    }
+
+    /**
+     * Test buildPreloadLinkTag handles boolean attributes
+     */
+    public function testBuildPreloadLinkTagHandlesBooleanAttributes(): void
+    {
+        $reflection = new ReflectionClass($this->Vite);
+        $method = $reflection->getMethod('buildPreloadLinkTag');
+
+        $result = $method->invoke(
+            $this->Vite,
+            'modulepreload',
+            '/assets/vendor.js',
+            ['async' => true, 'defer' => false],
+        );
+
+        // async=true should render as boolean attribute
+        $this->assertStringContainsString(' async', $result);
+        $this->assertStringNotContainsString('async="', $result);
+
+        // defer=false should not render
+        $this->assertStringNotContainsString('defer', $result);
+    }
+
+    /**
+     * Test buildPreloadLinkTag handles null attributes
+     */
+    public function testBuildPreloadLinkTagIgnoresNullAttributes(): void
+    {
+        $reflection = new ReflectionClass($this->Vite);
+        $method = $reflection->getMethod('buildPreloadLinkTag');
+
+        $result = $method->invoke(
+            $this->Vite,
+            'modulepreload',
+            '/assets/vendor.js',
+            ['crossorigin' => null, 'integrity' => 'sha256-abc123'],
+        );
+
+        // null attributes should be skipped
+        $this->assertStringNotContainsString('crossorigin', $result);
+        $this->assertStringContainsString('integrity="sha256-abc123"', $result);
+    }
+
+    /**
+     * Test buildPreloadLinkTag escapes special characters
+     */
+    public function testBuildPreloadLinkTagEscapesSpecialCharacters(): void
+    {
+        $reflection = new ReflectionClass($this->Vite);
+        $method = $reflection->getMethod('buildPreloadLinkTag');
+
+        $result = $method->invoke(
+            $this->Vite,
+            'modulepreload',
+            '/assets/vendor.js',
+            ['data-test' => '<script>alert("xss")</script>'],
+        );
+
+        // Should escape HTML entities
+        $this->assertStringNotContainsString('<script>', $result);
+        $this->assertStringContainsString('&lt;script&gt;', $result);
+    }
 }

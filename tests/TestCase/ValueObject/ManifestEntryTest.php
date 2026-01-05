@@ -253,7 +253,10 @@ class ManifestEntryTest extends TestCase
     }
 
     /**
-     * Test getImportUrls returns import URLs
+     * Test getImportUrls returns import keys with path processing
+     *
+     * Note: These are still keys, not resolved file paths. To resolve keys to actual
+     * file paths, use ManifestCollection::resolveImportUrls() instead.
      */
     public function testGetImportUrlsReturnsImportUrls(): void
     {

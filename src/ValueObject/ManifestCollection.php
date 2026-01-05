@@ -84,4 +84,53 @@ final class ManifestCollection extends Collection
 
         return new self($items);
     }
+
+    /**
+     * Find entry by manifest key
+     *
+     * @param string $key Manifest key to search for
+     * @return \CakeVite\ValueObject\ManifestEntry|null Entry if found, null otherwise
+     */
+    public function findByKey(string $key): ?ManifestEntry
+    {
+        foreach ($this as $entry) {
+            if ($entry->key === $key) {
+                return $entry;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve import keys to file URLs
+     *
+     * In Vite's manifest, the `imports` array contains keys that reference
+     * other entries in the manifest, not direct file paths. This method
+     * looks up each import key and returns the actual file URL.
+     *
+     * Performance: Uses indexBy() for O(n+m) complexity instead of O(n*m)
+     * with repeated linear searches.
+     *
+     * @param array<string> $importKeys Import keys from manifest entry
+     * @return array<string> Resolved file URLs
+     */
+    public function resolveImportUrls(array $importKeys): array
+    {
+        if ($importKeys === []) {
+            return [];
+        }
+
+        // Create keyed lookup for O(1) access - O(n) operation done once
+        $keyedManifest = $this->indexBy(fn(ManifestEntry $entry): string => $entry->key)->toArray();
+
+        $urls = [];
+        foreach ($importKeys as $key) {
+            if (isset($keyedManifest[$key]) && $keyedManifest[$key] instanceof ManifestEntry) {
+                $urls[] = $keyedManifest[$key]->getUrl();
+            }
+        }
+
+        return $urls;
+    }
 }

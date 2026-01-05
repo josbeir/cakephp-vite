@@ -4,19 +4,22 @@
     "src": "src/app.ts",
     "isEntry": true,
     "css": ["assets/app-xyz789.css"],
-    "imports": ["assets/vendor-def456.js", "assets/utils-ghi789.js"]
+    "imports": ["_vendor-def456.js", "_utils-ghi789.js"]
   },
-  "assets/vendor-def456.js": {
+  "_vendor-def456.js": {
     "file": "assets/vendor-def456.js",
+    "src": "_vendor-def456.js",
     "isEntry": false,
-    "imports": ["assets/react-jkl012.js"]
+    "imports": ["_react-jkl012.js"]
   },
-  "assets/utils-ghi789.js": {
+  "_utils-ghi789.js": {
     "file": "assets/utils-ghi789.js",
+    "src": "_utils-ghi789.js",
     "isEntry": false
   },
-  "assets/react-jkl012.js": {
+  "_react-jkl012.js": {
     "file": "assets/react-jkl012.js",
+    "src": "_react-jkl012.js",
     "isEntry": false
   }
 }
