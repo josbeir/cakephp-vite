@@ -109,17 +109,25 @@ final class ManifestCollection extends Collection
      * other entries in the manifest, not direct file paths. This method
      * looks up each import key and returns the actual file URL.
      *
+     * Performance: Uses indexBy() for O(n+m) complexity instead of O(n*m)
+     * with repeated linear searches.
+     *
      * @param array<string> $importKeys Import keys from manifest entry
      * @return array<string> Resolved file URLs
      */
     public function resolveImportUrls(array $importKeys): array
     {
-        $urls = [];
+        if ($importKeys === []) {
+            return [];
+        }
 
+        // Create keyed lookup for O(1) access - O(n) operation done once
+        $keyedManifest = $this->indexBy(fn(ManifestEntry $entry): string => $entry->key)->toArray();
+
+        $urls = [];
         foreach ($importKeys as $key) {
-            $entry = $this->findByKey($key);
-            if ($entry instanceof ManifestEntry) {
-                $urls[] = $entry->getUrl();
+            if (isset($keyedManifest[$key]) && $keyedManifest[$key] instanceof ManifestEntry) {
+                $urls[] = $keyedManifest[$key]->getUrl();
             }
         }
 

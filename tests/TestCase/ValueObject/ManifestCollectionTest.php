@@ -221,4 +221,41 @@ class ManifestCollectionTest extends TestCase
         $styles = $collection->filterByType(AssetType::Style);
         $this->assertCount(1, $styles);
     }
+
+    /**
+     * Test resolveImportUrls performance optimization with indexBy
+     *
+     * Verifies that the method uses O(n+m) keyed lookup instead of O(n*m) linear search
+     */
+    public function testResolveImportUrlsUsesEfficientLookup(): void
+    {
+        // Create a larger manifest to demonstrate performance optimization
+        $entries = [];
+        $importKeys = [];
+
+        // Create 50 entries
+        for ($i = 0; $i < 50; $i++) {
+            $data = new stdClass();
+            $data->file = sprintf('assets/chunk-%d.js', $i);
+
+            $key = sprintf('_chunk-%d.js', $i);
+            $entries[] = ManifestEntry::fromManifestData($key, $data, null);
+
+            // Every 5th entry is an import target
+            if ($i % 5 === 0) {
+                $importKeys[] = $key;
+            }
+        }
+
+        $collection = new ManifestCollection($entries);
+
+        // Resolve 10 imports from 50 entries
+        // With O(n*m): 10 * 50 = 500 iterations
+        // With O(n+m) indexBy: 50 + 10 = 60 iterations
+        $resolved = $collection->resolveImportUrls($importKeys);
+
+        $this->assertCount(10, $resolved);
+        $this->assertSame('/assets/chunk-0.js', $resolved[0]);
+        $this->assertSame('/assets/chunk-45.js', $resolved[9]);
+    }
 }

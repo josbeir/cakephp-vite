@@ -102,7 +102,7 @@ class ViteHelper extends Helper
             if ($tag->isPreload) {
                 // Render preload tags as <link rel="modulepreload" href="...">
                 $preloadType = $tag->preloadType ?? 'modulepreload';
-                $linkTag = sprintf('<link rel="%s" href="%s">', h($preloadType), h($tag->url));
+                $linkTag = $this->buildPreloadLinkTag($preloadType, $tag->url, $tag->attributes);
                 $this->getView()->append($block, $linkTag);
             } else {
                 // Render regular script tags
@@ -316,6 +316,58 @@ class ViteHelper extends Helper
 
         // Null config - return array with preload option
         return ['preload' => $preloadMode];
+    }
+
+    /**
+     * Build preload link tag with proper attribute rendering
+     *
+     * Supports attributes like crossorigin, integrity, as, etc.
+     * Filters out 'rel' attribute to avoid conflicts with preloadType.
+     *
+     * @param string $preloadType Preload type (modulepreload, preload, etc.)
+     * @param string $url Asset URL
+     * @param array<string, mixed> $attributes HTML attributes
+     * @return string Complete link tag HTML
+     */
+    private function buildPreloadLinkTag(string $preloadType, string $url, array $attributes): string
+    {
+        // Filter out 'rel' attribute to avoid conflicts
+        $attributes = array_filter(
+            $attributes,
+            fn($key): bool => $key !== 'rel',
+            ARRAY_FILTER_USE_KEY,
+        );
+
+        // Build attribute string
+        $attributesString = '';
+        foreach ($attributes as $attrName => $attrValue) {
+            if ($attrValue === null) {
+                continue;
+            }
+
+            // Handle boolean attributes (e.g., async, defer)
+            if (is_bool($attrValue)) {
+                if ($attrValue) {
+                    $attributesString .= ' ' . h((string)$attrName);
+                }
+
+                continue;
+            }
+
+            // Regular attributes with values
+            $attributesString .= sprintf(
+                ' %s="%s"',
+                h((string)$attrName),
+                h((string)$attrValue),
+            );
+        }
+
+        return sprintf(
+            '<link rel="%s" href="%s"%s>',
+            h($preloadType),
+            h($url),
+            $attributesString,
+        );
     }
 
     /**
