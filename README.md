@@ -220,7 +220,7 @@ return [
         ],
 
         // Modulepreload support for faster loading (production only)
-        // Options: 'none', 'link-tag', 'link-header'
+        // Options: 'none', 'link-tag'
         'preload' => env('VITE_PRELOAD_MODE', 'link-tag'),
 
         // Persistent caching (production performance optimization)
@@ -523,7 +523,7 @@ $this->Vite->script([
 // config/app_vite.php
 return [
     'CakeVite' => [
-        // Options: 'none', 'link-tag', 'link-header'
+        // Options: 'none', 'link-tag'
         'preload' => 'none',  // Disable preloading globally
     ],
 ];
@@ -532,7 +532,7 @@ return [
 **Environment Variable:**
 ```bash
 # .env
-VITE_PRELOAD_MODE=none  # or 'link-tag', 'link-header'
+VITE_PRELOAD_MODE=none  # or 'link-tag'
 ```
 
 > [!NOTE]
