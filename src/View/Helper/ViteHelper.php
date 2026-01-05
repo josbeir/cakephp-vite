@@ -97,9 +97,17 @@ class ViteHelper extends Helper
 
         $tags = $this->getAssetService()->generateScriptTags($config, $options);
 
-        // Render script tags
+        // Render tags (preload tags as link elements, script tags as script elements)
         foreach ($tags as $tag) {
-            $this->Html->script($tag->url, array_merge(['block' => $block], $tag->attributes));
+            if ($tag->isPreload) {
+                // Render preload tags as <link rel="modulepreload" href="...">
+                $preloadType = $tag->preloadType ?? 'modulepreload';
+                $linkTag = sprintf('<link rel="%s" href="%s">', h($preloadType), h($tag->url));
+                $this->getView()->append($block, $linkTag);
+            } else {
+                // Render regular script tags
+                $this->Html->script($tag->url, array_merge(['block' => $block], $tag->attributes));
+            }
         }
 
         // Add dependent CSS if in production
