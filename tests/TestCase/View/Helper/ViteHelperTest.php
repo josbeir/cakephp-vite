@@ -727,4 +727,147 @@ class ViteHelperTest extends TestCase
         $this->assertStringNotContainsString('<script>', $result);
         $this->assertStringContainsString('&lt;script&gt;', $result);
     }
+
+    /**
+     * Test script method with block => false outputs inline
+     */
+    public function testScriptWithBlockFalseOutputsInline(): void
+    {
+        $config = [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['script' => ['src/app.ts']],
+            ],
+        ];
+
+        ob_start();
+        $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
+        $output = ob_get_clean();
+
+        // Should output directly instead of buffering to view block
+        $this->assertStringContainsString('http://localhost:3000/@vite/client', $output);
+        $this->assertStringContainsString('http://localhost:3000/src/app.ts', $output);
+        $this->assertStringContainsString('type="module"', $output);
+
+        // View block should be empty
+        $this->assertEmpty($this->View->fetch('script'));
+    }
+
+    /**
+     * Test script method with block => false in production mode
+     */
+    public function testScriptWithBlockFalseInProductionMode(): void
+    {
+        $config = [
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+        ];
+
+        ob_start();
+        $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
+        $output = ob_get_clean();
+
+        // Should output directly
+        $this->assertStringContainsString('assets/app-abc123.js', $output);
+        $this->assertStringNotContainsString('localhost', $output);
+
+        // View block should be empty
+        $this->assertEmpty($this->View->fetch('script'));
+    }
+
+    /**
+     * Test css method with block => false outputs inline
+     */
+    public function testCssWithBlockFalseOutputsInline(): void
+    {
+        $config = [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['style' => ['src/style.css']],
+            ],
+        ];
+
+        ob_start();
+        $this->Vite->css(['files' => ['src/style.css'], 'block' => false], $config);
+        $output = ob_get_clean();
+
+        // Should output directly
+        $this->assertStringContainsString('http://localhost:3000/src/style.css', $output);
+
+        // View block should be empty
+        $this->assertEmpty($this->View->fetch('css'));
+    }
+
+    /**
+     * Test css method with block => false in production mode
+     */
+    public function testCssWithBlockFalseInProductionMode(): void
+    {
+        $config = [
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+        ];
+
+        ob_start();
+        $this->Vite->css(['files' => ['src/style.css'], 'block' => false], $config);
+        $output = ob_get_clean();
+
+        // Should output directly
+        $this->assertStringContainsString('assets/style-jkl012.css', $output);
+
+        // View block should be empty
+        $this->assertEmpty($this->View->fetch('css'));
+    }
+
+    /**
+     * Test script method with block => false outputs preload tags inline
+     */
+    public function testScriptWithBlockFalseOutputsPreloadTagsInline(): void
+    {
+        $config = [
+            'build' => ['manifestPath' => TESTS . 'Fixture' . DS . 'manifest-with-imports.json'],
+            'preload' => 'link-tag',
+            'forceProductionMode' => true,
+        ];
+
+        ob_start();
+        $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
+        $output = ob_get_clean();
+
+        // Preload tags should be output directly
+        $this->assertStringContainsString('modulepreload', $output);
+        $this->assertStringContainsString('<link rel="modulepreload"', $output);
+
+        // View block should be empty
+        $this->assertEmpty($this->View->fetch('script'));
+    }
+
+    /**
+     * Test script method with block => false outputs dependent CSS inline
+     */
+    public function testScriptWithBlockFalseOutputsDependentCssInline(): void
+    {
+        $config = [
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+        ];
+
+        ob_start();
+        $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
+        $output = ob_get_clean();
+
+        // Dependent CSS should be output directly
+        $this->assertStringContainsString('assets/app-xyz789.css', $output);
+
+        // CSS view block should be empty
+        $this->assertEmpty($this->View->fetch('css'));
+    }
 }

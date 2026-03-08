@@ -76,6 +76,9 @@ class ViteHelper extends Helper
      *
      * Backwards compatible with ViteScriptsHelper::script()
      *
+     * When `block` option is `false`, outputs tags directly (inline).
+     * Otherwise appends to the specified view block.
+     *
      * @param array<string, mixed>|string $options Options or file shorthand
      * @param \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null $config Configuration
      */
@@ -94,6 +97,7 @@ class ViteHelper extends Helper
 
         $block = $options['block'] ?? $config->scriptBlock;
         $cssBlock = $options['cssBlock'] ?? $config->cssBlock;
+        $inline = $block === false;
 
         $tags = $this->getAssetService()->generateScriptTags($config, $options);
 
@@ -103,16 +107,24 @@ class ViteHelper extends Helper
                 // Render preload tags as <link rel="modulepreload" href="...">
                 $preloadType = $tag->preloadType ?? 'modulepreload';
                 $linkTag = $this->buildPreloadLinkTag($preloadType, $tag->url, $tag->attributes);
-                $this->getView()->append($block, $linkTag);
+                if ($inline) {
+                    echo $linkTag;
+                } else {
+                    $this->getView()->append($block, $linkTag);
+                }
             } else {
                 // Render regular script tags
-                $this->Html->script($tag->url, array_merge(['block' => $block], $tag->attributes));
+                // When block is false, Html::script() returns the tag string
+                $scriptTag = $this->Html->script($tag->url, array_merge(['block' => $block], $tag->attributes));
+                if ($inline && $scriptTag !== null) {
+                    echo $scriptTag;
+                }
             }
         }
 
         // Add dependent CSS if in production
         if (!$this->isDev($config)) {
-            $this->addDependentCss($config, $options, $cssBlock);
+            $this->addDependentCss($config, $options, $cssBlock, $inline);
         }
     }
 
@@ -120,6 +132,9 @@ class ViteHelper extends Helper
      * Render CSS tags
      *
      * Backwards compatible with ViteScriptsHelper::css()
+     *
+     * When `block` option is `false`, outputs tags directly (inline).
+     * Otherwise appends to the specified view block.
      *
      * @param array<string, mixed>|string $options Options or file shorthand
      * @param \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null $config Configuration
@@ -132,11 +147,16 @@ class ViteHelper extends Helper
         $config = $this->resolveConfig($config);
 
         $block = $options['block'] ?? $config->cssBlock;
+        $inline = $block === false;
 
         $tags = $this->getAssetService()->generateStyleTags($config, $options);
 
         foreach ($tags as $tag) {
-            $this->Html->css($tag->url, array_merge(['block' => $block], $tag->attributes));
+            // When block is false, Html::css() returns the tag string
+            $cssTag = $this->Html->css($tag->url, array_merge(['block' => $block], $tag->attributes));
+            if ($inline && $cssTag !== null) {
+                echo $cssTag;
+            }
         }
     }
 
@@ -271,9 +291,10 @@ class ViteHelper extends Helper
      *
      * @param \CakeVite\ValueObject\ViteConfig $config Configuration
      * @param array<string, mixed> $options Options
-     * @param string $cssBlock CSS block name
+     * @param string|false $cssBlock CSS block name or false for inline output
+     * @param bool $inline Whether to output inline (when block is false)
      */
-    private function addDependentCss(ViteConfig $config, array $options, string $cssBlock): void
+    private function addDependentCss(ViteConfig $config, array $options, string|false $cssBlock, bool $inline = false): void
     {
         $manifestService = new ManifestService();
         $manifest = $manifestService->load($config);
@@ -288,7 +309,10 @@ class ViteHelper extends Helper
 
         foreach ($entries as $entry) {
             foreach ($entry->getDependentCssUrls() as $cssUrl) {
-                $this->Html->css($pluginPrefix . $cssUrl, ['block' => $cssBlock]);
+                $cssTag = $this->Html->css($pluginPrefix . $cssUrl, ['block' => $cssBlock]);
+                if ($inline && $cssTag !== null) {
+                    echo $cssTag;
+                }
             }
         }
     }
