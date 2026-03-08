@@ -45,6 +45,11 @@ class ViteHelper extends Helper
     private ?Environment $cachedEnvironment = null;
 
     /**
+     * Track if @vite/client has been rendered (optimization #3: deduplicate vite client)
+     */
+    private bool $viteClientRendered = false;
+
+    /**
      * Check if currently in development mode
      *
      * Backwards compatible with ViteScriptsHelper::isDev()
@@ -101,7 +106,14 @@ class ViteHelper extends Helper
         $cssBlock = $options['cssBlock'] ?? $config->cssBlock;
         $inline = $block === false;
 
+        // Pass flag to skip vite client if already rendered (deduplication)
+        $options['skipViteClient'] = $this->viteClientRendered;
         $tags = $this->getAssetService()->generateScriptTags($config, $options);
+
+        // Mark vite client as rendered after first dev mode script() call
+        if ($this->isDev($config) && !$this->viteClientRendered) {
+            $this->viteClientRendered = true;
+        }
 
         $output = '';
 
@@ -176,24 +188,28 @@ class ViteHelper extends Helper
      *
      * Backwards compatible with ViteScriptsHelper::pluginScript()
      *
+     * When `block` option is `false`, returns the tags as a string for inline output.
+     * Otherwise appends to the specified view block and returns null.
+     *
      * @param string $pluginName Plugin name
      * @param bool $devMode Development mode flag
      * @param array<string, mixed> $options Options
      * @param \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null $config Configuration
+     * @return string|null Returns tag string when block is false, null otherwise
      */
     public function pluginScript(
         string $pluginName,
         bool $devMode = false,
         array $options = [],
         array|ViteConfig|null $config = null,
-    ): void {
+    ): ?string {
         $config = $this->resolveConfig($config);
         $config = $config->merge([
             'plugin' => $pluginName,
             'forceProductionMode' => !$devMode,
         ]);
 
-        $this->script($options, $config);
+        return $this->script($options, $config);
     }
 
     /**
@@ -201,24 +217,28 @@ class ViteHelper extends Helper
      *
      * Backwards compatible with ViteScriptsHelper::pluginCss()
      *
+     * When `block` option is `false`, returns the tags as a string for inline output.
+     * Otherwise appends to the specified view block and returns null.
+     *
      * @param string $pluginName Plugin name
      * @param bool $devMode Development mode flag
      * @param array<string, mixed> $options Options
      * @param \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null $config Configuration
+     * @return string|null Returns tag string when block is false, null otherwise
      */
     public function pluginCss(
         string $pluginName,
         bool $devMode = false,
         array $options = [],
         array|ViteConfig|null $config = null,
-    ): void {
+    ): ?string {
         $config = $this->resolveConfig($config);
         $config = $config->merge([
             'plugin' => $pluginName,
             'forceProductionMode' => !$devMode,
         ]);
 
-        $this->css($options, $config);
+        return $this->css($options, $config);
     }
 
     /**
@@ -300,10 +320,13 @@ class ViteHelper extends Helper
     /**
      * Add dependent CSS from JS entries
      *
+     * When cssBlock is false and inline mode is disabled, dependent CSS injection is skipped.
+     * This allows users to explicitly disable automatic CSS injection.
+     *
      * @param \CakeVite\ValueObject\ViteConfig $config Configuration
      * @param array<string, mixed> $options Options
-     * @param string|false $cssBlock CSS block name or false for inline output
-     * @param bool $inline Whether to return inline (when block is false)
+     * @param string|false $cssBlock CSS block name or false to disable/inline
+     * @param bool $inline Whether to return inline (when script block is false)
      * @return string Returns CSS tags when inline is true, empty string otherwise
      */
     private function addDependentCss(
@@ -312,6 +335,11 @@ class ViteHelper extends Helper
         string|false $cssBlock,
         bool $inline = false,
     ): string {
+        // Skip dependent CSS injection if cssBlock is false and not in inline mode
+        if ($cssBlock === false && !$inline) {
+            return '';
+        }
+
         $manifestService = new ManifestService();
         $manifest = $manifestService->load($config);
 

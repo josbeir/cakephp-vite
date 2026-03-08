@@ -511,6 +511,29 @@ This is useful when you need to render assets directly in elements or partials:
 </div>
 ```
 
+**Vite Client Deduplication:**
+
+In development mode, the `@vite/client` script is automatically deduplicated. Multiple `script()` calls (e.g., in layout, elements, components) will only output the Vite client once:
+
+```php
+// Layout
+<?php $this->Vite->script(['files' => ['src/app.js']]); ?>  <!-- Includes @vite/client -->
+
+// Element
+<?php $this->Vite->script(['files' => ['src/element.js']]); ?>  <!-- No duplicate client -->
+```
+
+**Disable Dependent CSS Injection:**
+
+In production mode, `script()` automatically injects dependent CSS from JS entries. Use `cssBlock => false` to disable this:
+
+```php
+<?php
+// Only output scripts, skip dependent CSS injection
+$this->Vite->script(['files' => ['src/main.js'], 'cssBlock' => false]);
+?>
+```
+
 ### Preloading Assets
 
 CakeVite supports `modulepreload` to improve load times for applications with code splitting. Preloading hints to the browser which modules will be needed soon, allowing parallel downloads.

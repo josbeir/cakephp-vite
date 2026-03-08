@@ -864,4 +864,184 @@ class ViteHelperTest extends TestCase
         // CSS view block should be empty
         $this->assertEmpty($this->View->fetch('css'));
     }
+
+    /**
+     * Test @vite/client is only output once when script() is called multiple times
+     */
+    public function testViteClientIsDeduplicatedInDevelopmentMode(): void
+    {
+        $config = [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['script' => ['src/app.ts']],
+            ],
+        ];
+
+        // Call script() multiple times (simulating layout + element + component)
+        $this->Vite->script(['files' => ['src/app.ts']], $config);
+        $this->Vite->script(['files' => ['src/component.ts']], $config);
+        $this->Vite->script(['files' => ['src/element.ts']], $config);
+
+        $result = $this->View->fetch('script');
+
+        // @vite/client should only appear once
+        $this->assertSame(1, substr_count($result, '/@vite/client'));
+
+        // But all three script entries should be present
+        $this->assertStringContainsString('src/app.ts', $result);
+        $this->assertStringContainsString('src/component.ts', $result);
+        $this->assertStringContainsString('src/element.ts', $result);
+    }
+
+    /**
+     * Test @vite/client deduplication works with inline mode
+     */
+    public function testViteClientIsDeduplicatedWithInlineMode(): void
+    {
+        $config = [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['script' => ['src/app.ts']],
+            ],
+        ];
+
+        // First call outputs vite client
+        $output1 = $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
+
+        // Second call should NOT include vite client again
+        $output2 = $this->Vite->script(['files' => ['src/component.ts'], 'block' => false], $config);
+
+        // First output should have the client
+        $this->assertNotNull($output1);
+        $this->assertStringContainsString('/@vite/client', $output1);
+
+        // Second output should NOT have the client
+        $this->assertNotNull($output2);
+        $this->assertStringNotContainsString('/@vite/client', $output2);
+
+        // But both should have their respective entry points
+        $this->assertStringContainsString('src/app.ts', $output1);
+        $this->assertStringContainsString('src/component.ts', $output2);
+    }
+
+    /**
+     * Test @vite/client deduplication state is tracked in helper property
+     */
+    public function testViteClientRenderedStateIsTracked(): void
+    {
+        $reflection = new ReflectionClass($this->Vite);
+        $property = $reflection->getProperty('viteClientRendered');
+
+        // Initially false
+        $this->assertFalse($property->getValue($this->Vite));
+
+        $config = [
+            'devServer' => [
+                'url' => 'http://localhost:3000',
+                'hostHints' => ['localhost'],
+                'entries' => ['script' => ['src/app.ts']],
+            ],
+        ];
+
+        // Call script() in development mode
+        $this->Vite->script(['files' => ['src/app.ts']], $config);
+
+        // Should now be true
+        $this->assertTrue($property->getValue($this->Vite));
+    }
+
+    /**
+     * Test @vite/client deduplication does not affect production mode
+     */
+    public function testViteClientDeduplicationDoesNotAffectProductionMode(): void
+    {
+        $config = [
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+        ];
+
+        // Multiple calls in production mode
+        $this->Vite->script(['files' => ['src/app.ts']], $config);
+        $this->Vite->script(['files' => ['src/app.ts']], $config);
+
+        $result = $this->View->fetch('script');
+
+        // Production mode doesn't use @vite/client at all
+        $this->assertStringNotContainsString('@vite/client', $result);
+
+        // But the manifest scripts should be there (potentially duplicated, that's fine)
+        $this->assertStringContainsString('assets/app-abc123.js', $result);
+    }
+
+    /**
+     * Test pluginScript returns inline output with block => false
+     */
+    public function testPluginScriptReturnsInlineOutput(): void
+    {
+        $config = [
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+        ];
+
+        $output = $this->Vite->pluginScript('TestPlugin', false, ['files' => ['src/app.ts'], 'block' => false], $config);
+
+        // Should return tags directly
+        $this->assertNotNull($output);
+        $this->assertStringContainsString('assets/app-abc123.js', $output);
+
+        // View block should be empty
+        $this->assertEmpty($this->View->fetch('script'));
+    }
+
+    /**
+     * Test pluginCss returns inline output with block => false
+     */
+    public function testPluginCssReturnsInlineOutput(): void
+    {
+        $config = [
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+        ];
+
+        $output = $this->Vite->pluginCss('TestPlugin', false, ['files' => ['src/style.css'], 'block' => false], $config);
+
+        // Should return tags directly
+        $this->assertNotNull($output);
+        $this->assertStringContainsString('assets/style-jkl012.css', $output);
+
+        // View block should be empty
+        $this->assertEmpty($this->View->fetch('css'));
+    }
+
+    /**
+     * Test cssBlock => false skips dependent CSS when not in inline mode
+     */
+    public function testCssBlockFalseSkipsDependentCssWhenNotInline(): void
+    {
+        $config = [
+            'forceProductionMode' => true,
+            'build' => [
+                'manifestPath' => TESTS . 'Fixture' . DS . 'manifest.json',
+            ],
+        ];
+
+        // script block is 'script' (not inline), but cssBlock is false
+        $this->Vite->script(['files' => ['src/app.ts'], 'cssBlock' => false], $config);
+
+        // Scripts should be in the block
+        $scriptResult = $this->View->fetch('script');
+        $this->assertStringContainsString('assets/app-abc123.js', $scriptResult);
+
+        // CSS should be empty (cssBlock false means skip dependent CSS)
+        $cssResult = $this->View->fetch('css');
+        $this->assertEmpty($cssResult);
+    }
 }
