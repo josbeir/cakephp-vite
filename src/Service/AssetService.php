@@ -74,12 +74,14 @@ final class AssetService
     {
         $tags = [];
 
-        // Add Vite client
-        $tags[] = new AssetTag(
-            url: $config->devServerUrl . '/@vite/client',
-            type: AssetType::Script,
-            attributes: ['type' => 'module'],
-        );
+        // Add Vite client (skip if already rendered to avoid duplicates)
+        if (empty($options['skipViteClient'])) {
+            $tags[] = new AssetTag(
+                url: $config->devServerUrl . '/@vite/client',
+                type: AssetType::Script,
+                attributes: ['type' => 'module'],
+            );
+        }
 
         // Add script entries
         $entries = $options['files'] ?? $options['devEntries'] ?? $config->scriptEntries;

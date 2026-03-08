@@ -34,6 +34,7 @@ A [Vite.js](https://vitejs.dev/) integration for CakePHP 5.0+ applications. Seam
   - [Plugin Assets](#plugin-assets)
   - [Multiple Entry Points](#multiple-entry-points)
   - [Custom Attributes](#custom-attributes)
+  - [Inline Output](#inline-output)
   - [Preloading Assets](#preloading-assets)
   - [Caching](#caching)
   - [Multiple Configurations](#multiple-configurations)
@@ -485,6 +486,52 @@ $this->Vite->script([
 
 <!-- In layout -->
 <?= $this->fetch('custom_scripts') ?>
+```
+
+### Inline Output
+
+By default, `script()` and `css()` append tags to view blocks for rendering in layouts.
+Set `block => false` to return tags as a string for inline output:
+
+```php
+<?php
+// Output directly instead of buffering to view blocks
+echo $this->Vite->script(['files' => ['src/main.js'], 'block' => false]);
+echo $this->Vite->css(['files' => ['src/style.css'], 'block' => false]);
+?>
+```
+
+This is useful when you need to render assets directly in elements or partials:
+
+```php
+<!-- In an element file -->
+<?= $this->Vite->css(['files' => ['src/component.css'], 'block' => false]) ?>
+<div class="component">
+    <!-- Component content -->
+</div>
+```
+
+**Vite Client Deduplication:**
+
+In development mode, the `@vite/client` script is automatically deduplicated. Multiple `script()` calls (e.g., in layout, elements, components) will only output the Vite client once:
+
+```php
+// Layout
+<?php $this->Vite->script(['files' => ['src/app.js']]); ?>  <!-- Includes @vite/client -->
+
+// Element
+<?php $this->Vite->script(['files' => ['src/element.js']]); ?>  <!-- No duplicate client -->
+```
+
+**Disable Dependent CSS Injection:**
+
+In production mode, `script()` automatically injects dependent CSS from JS entries. Use `cssBlock => false` to disable this:
+
+```php
+<?php
+// Only output scripts, skip dependent CSS injection
+$this->Vite->script(['files' => ['src/main.js'], 'cssBlock' => false]);
+?>
 ```
 
 ### Preloading Assets
