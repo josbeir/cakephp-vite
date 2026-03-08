@@ -741,11 +741,10 @@ class ViteHelperTest extends TestCase
             ],
         ];
 
-        ob_start();
-        $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
-        $output = ob_get_clean();
+        $output = $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
 
-        // Should output directly instead of buffering to view block
+        // Should return tags directly instead of buffering to view block
+        $this->assertNotNull($output);
         $this->assertStringContainsString('http://localhost:3000/@vite/client', $output);
         $this->assertStringContainsString('http://localhost:3000/src/app.ts', $output);
         $this->assertStringContainsString('type="module"', $output);
@@ -766,11 +765,10 @@ class ViteHelperTest extends TestCase
             ],
         ];
 
-        ob_start();
-        $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
-        $output = ob_get_clean();
+        $output = $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
 
-        // Should output directly
+        // Should return tags directly
+        $this->assertNotNull($output);
         $this->assertStringContainsString('assets/app-abc123.js', $output);
         $this->assertStringNotContainsString('localhost', $output);
 
@@ -791,11 +789,10 @@ class ViteHelperTest extends TestCase
             ],
         ];
 
-        ob_start();
-        $this->Vite->css(['files' => ['src/style.css'], 'block' => false], $config);
-        $output = ob_get_clean();
+        $output = $this->Vite->css(['files' => ['src/style.css'], 'block' => false], $config);
 
-        // Should output directly
+        // Should return tags directly
+        $this->assertNotNull($output);
         $this->assertStringContainsString('http://localhost:3000/src/style.css', $output);
 
         // View block should be empty
@@ -814,11 +811,10 @@ class ViteHelperTest extends TestCase
             ],
         ];
 
-        ob_start();
-        $this->Vite->css(['files' => ['src/style.css'], 'block' => false], $config);
-        $output = ob_get_clean();
+        $output = $this->Vite->css(['files' => ['src/style.css'], 'block' => false], $config);
 
-        // Should output directly
+        // Should return tags directly
+        $this->assertNotNull($output);
         $this->assertStringContainsString('assets/style-jkl012.css', $output);
 
         // View block should be empty
@@ -836,11 +832,10 @@ class ViteHelperTest extends TestCase
             'forceProductionMode' => true,
         ];
 
-        ob_start();
-        $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
-        $output = ob_get_clean();
+        $output = $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
 
-        // Preload tags should be output directly
+        // Preload tags should be returned directly
+        $this->assertNotNull($output);
         $this->assertStringContainsString('modulepreload', $output);
         $this->assertStringContainsString('<link rel="modulepreload"', $output);
 
@@ -860,11 +855,10 @@ class ViteHelperTest extends TestCase
             ],
         ];
 
-        ob_start();
-        $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
-        $output = ob_get_clean();
+        $output = $this->Vite->script(['files' => ['src/app.ts'], 'block' => false], $config);
 
-        // Dependent CSS should be output directly
+        // Dependent CSS should be returned directly
+        $this->assertNotNull($output);
         $this->assertStringContainsString('assets/app-xyz789.css', $output);
 
         // CSS view block should be empty
