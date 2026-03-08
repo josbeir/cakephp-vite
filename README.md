@@ -34,6 +34,7 @@ A [Vite.js](https://vitejs.dev/) integration for CakePHP 5.0+ applications. Seam
   - [Plugin Assets](#plugin-assets)
   - [Multiple Entry Points](#multiple-entry-points)
   - [Custom Attributes](#custom-attributes)
+  - [Inline Output](#inline-output)
   - [Preloading Assets](#preloading-assets)
   - [Caching](#caching)
   - [Multiple Configurations](#multiple-configurations)
@@ -485,6 +486,29 @@ $this->Vite->script([
 
 <!-- In layout -->
 <?= $this->fetch('custom_scripts') ?>
+```
+
+### Inline Output
+
+By default, `script()` and `css()` append tags to view blocks for rendering in layouts.
+Set `block => false` to return tags as a string for inline output:
+
+```php
+<?php
+// Output directly instead of buffering to view blocks
+echo $this->Vite->script(['files' => ['src/main.js'], 'block' => false]);
+echo $this->Vite->css(['files' => ['src/style.css'], 'block' => false]);
+?>
+```
+
+This is useful when you need to render assets directly in elements or partials:
+
+```php
+<!-- In an element file -->
+<?= $this->Vite->css(['files' => ['src/component.css'], 'block' => false]) ?>
+<div class="component">
+    <!-- Component content -->
+</div>
 ```
 
 ### Preloading Assets
