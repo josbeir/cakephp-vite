@@ -111,6 +111,8 @@ final class ManifestService
         } catch (JsonException $jsonException) {
             throw new ManifestException(
                 sprintf('Invalid JSON in manifest file: %s. Error: %s', $manifestPath, $jsonException->getMessage()),
+                $jsonException->getCode(),
+                $jsonException,
             );
         }
 

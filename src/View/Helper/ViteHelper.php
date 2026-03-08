@@ -17,6 +17,7 @@ use CakeVite\ValueObject\ViteConfig;
  * Services are manually instantiated since CakePHP's DI container
  * is not available in helpers (only in Controllers, Commands, and Components).
  *
+ * @extends \Cake\View\Helper<\Cake\View\View>
  * @property \Cake\View\Helper\HtmlHelper $Html
  */
 class ViteHelper extends Helper
