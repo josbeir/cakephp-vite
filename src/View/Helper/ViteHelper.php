@@ -306,7 +306,7 @@ class ViteHelper extends Helper
         $configName = $options['config'];
         unset($options['config']);
 
-        $config = $config ?? [];
+        $config ??= [];
         if (is_array($config)) {
             $config['config'] = $configName;
         } else {

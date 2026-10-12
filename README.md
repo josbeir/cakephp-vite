@@ -1,14 +1,17 @@
 [![PHPStan Level 8](https://img.shields.io/badge/PHPStan-level%208-brightgreen)](https://github.com/josbeir/cakephp-vite)
-[![Build Status](https://github.com/josbeir/cakephp-vite/actions/workflows/ci.yml/badge.svg)](https://github.com/josbeir/cakephp-vite/actions)
+[![Build Status](https://github.com/josbeir/cakephp-vite/actions/workflows/ci.yml/badge.svg?branch=cake6)](https://github.com/josbeir/cakephp-vite/actions?query=branch%3Acake6)
 [![codecov](https://codecov.io/github/josbeir/cakephp-vite/graph/badge.svg?token=4VGWJQTWH5)](https://codecov.io/github/josbeir/cakephp-vite)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PHP Version](https://img.shields.io/badge/php-8.2%2B-blue.svg)](https://www.php.net/releases/8.2/en.php)
-[![CakePHP Version](https://img.shields.io/badge/CakePHP-5.2%2B-red.svg)](https://cakephp.org/)
+[![PHP Version](https://img.shields.io/badge/php-8.5%2B-blue.svg)](https://www.php.net/releases/8.5/en.php)
+[![CakePHP Version](https://img.shields.io/badge/CakePHP-6.x-red.svg)](https://cakephp.org/)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/josbeir/cakephp-vite)](https://packagist.org/packages/josbeir/cakephp-vite)
 
 # CakeVite: Vite Integration for CakePHP
 
-A [Vite.js](https://vitejs.dev/) integration for CakePHP 5.0+ applications. Seamlessly switch between development and production modes with automatic asset tag generation.
+A [Vite.js](https://vitejs.dev/) integration for CakePHP 6.x applications. Seamlessly switch between development and production modes with automatic asset tag generation.
+
+> [!NOTE]
+> The `cake6` branch targets the upcoming CakePHP 6 release and requires PHP 8.5 or higher, matching the current [CakePHP 6 requirements](https://github.com/cakephp/cakephp/blob/6.x/composer.json). For CakePHP 5 applications, use the stable plugin releases on `main`.
 
 > [!NOTE]
 > This project is a spiritual successor to [passchn/cakephp-vite](https://github.com/passchn/cakephp-vite), rewritten with modern PHP and a service-oriented architecture. There is no affiliation with the original project.
@@ -60,16 +63,25 @@ A [Vite.js](https://vitejs.dev/) integration for CakePHP 5.0+ applications. Seam
 
 ### Requirements
 
-- PHP 8.2 or higher
-- CakePHP 5.0 or higher
+- PHP 8.5 or higher
+- CakePHP 6.x (currently a development release)
 - Vite 2.0 or higher (installed via npm/yarn/pnpm)
 
 ### Installing the Plugin
 
-Install via Composer:
+While CakePHP 6 and its Chronos dependency are in development, set the following in your application's `composer.json` to allow development dependencies while preferring stable releases:
+
+```json
+{
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
+```
+
+Install the CakePHP 6 preparation branch via Composer:
 
 ```bash
-composer require josbeir/cakephp-vite
+composer require josbeir/cakephp-vite:dev-cake6 --with-all-dependencies
 ```
 
 Load the plugin:

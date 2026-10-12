@@ -47,6 +47,26 @@ class ViteHelperTest extends TestCase
     }
 
     /**
+     * Test helper loading through CakePHP's registry and inline rendering
+     */
+    public function testHelperRegistryLoadsPluginHelper(): void
+    {
+        $helper = $this->View->loadHelper('CakeVite.Vite');
+
+        $this->assertInstanceOf(ViteHelper::class, $helper);
+        $this->assertSame($this->View, $helper->getView());
+
+        $output = $helper->script(['files' => ['src/app.ts'], 'block' => false], [
+            'devServer' => ['url' => 'http://localhost:5173', 'hostHints' => ['localhost']],
+        ]);
+
+        $this->assertNotNull($output);
+        $this->assertStringContainsString('src="http://localhost:5173/@vite/client"', $output);
+        $this->assertStringContainsString('src="http://localhost:5173/src/app.ts"', $output);
+        $this->assertEmpty($this->View->fetch('script'));
+    }
+
+    /**
      * Test isDev returns true for development environment
      */
     public function testIsDevReturnsTrueForDevelopment(): void
