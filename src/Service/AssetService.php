@@ -6,6 +6,7 @@ namespace CakeVite\Service;
 use CakeVite\Enum\AssetType;
 use CakeVite\Enum\ScriptType;
 use CakeVite\Exception\ConfigurationException;
+use CakeVite\Exception\ManifestException;
 use CakeVite\ValueObject\AssetTag;
 use CakeVite\ValueObject\ManifestCollection;
 use CakeVite\ValueObject\ManifestEntry;
@@ -29,6 +30,39 @@ final class AssetService
         private readonly EnvironmentService $environmentService,
         private readonly ManifestService $manifestService,
     ) {
+    }
+
+    /**
+     * Resolve an exact asset key without requiring a script or stylesheet entry.
+     *
+     * @param string $path Source asset path / exact manifest key.
+     * @param \CakeVite\ValueObject\ViteConfig $config Configuration.
+     * @return string Asset URL or CakePHP plugin asset path.
+     * @throws \CakeVite\Exception\ConfigurationException When the asset path is empty.
+     * @throws \CakeVite\Exception\ManifestException When a production entry cannot be resolved.
+     */
+    public function resolveAssetUrl(string $path, ViteConfig $config): string
+    {
+        $path = ltrim($path, '/');
+        if ($path === '') {
+            throw new ConfigurationException('An asset manifest key is required.');
+        }
+
+        $environment = $this->environmentService->detect($config);
+        if ($environment->isDevelopment()) {
+            return rtrim($config->devServerUrl, '/') . '/' . $path;
+        }
+
+        $entry = $this->manifestService->load($config, $environment)->findByKey($path);
+        if (!$entry instanceof ManifestEntry) {
+            throw new ManifestException(
+                sprintf('Asset "%s" was not found in Vite manifest "%s".', $path, $config->manifestPath),
+            );
+        }
+
+        $pluginPrefix = $config->pluginName ? $config->pluginName . '.' : '';
+
+        return $pluginPrefix . $entry->getUrl();
     }
 
     /**

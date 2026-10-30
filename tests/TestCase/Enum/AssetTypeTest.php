@@ -64,11 +64,14 @@ class AssetTypeTest extends TestCase
     /**
      * Test enum cases are exhaustive
      */
-    public function testEnumHasExactlyTwoCases(): void
+    public function testEnumHasExactlyThreeCases(): void
     {
         $cases = AssetType::cases();
-        $this->assertCount(2, $cases);
+        $this->assertCount(3, $cases);
         $this->assertSame(AssetType::Script, $cases[0]);
         $this->assertSame(AssetType::Style, $cases[1]);
+        $this->assertSame(AssetType::Asset, $cases[2]);
+        $this->assertFalse(AssetType::Asset->isScript());
+        $this->assertFalse(AssetType::Asset->isStyle());
     }
 }
