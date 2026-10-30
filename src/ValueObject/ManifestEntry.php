@@ -57,13 +57,15 @@ final readonly class ManifestEntry
     }
 
     /**
-     * Get the asset type (script or style)
+     * Get the asset type, keeping images and fonts out of script and style rendering
      */
     public function getAssetType(): AssetType
     {
-        return str_ends_with($this->file, '.css')
-            ? AssetType::Style
-            : AssetType::Script;
+        return match (strtolower(pathinfo($this->file, PATHINFO_EXTENSION))) {
+            'css' => AssetType::Style,
+            'js', 'mjs', 'cjs' => AssetType::Script,
+            default => AssetType::Asset,
+        };
     }
 
     /**

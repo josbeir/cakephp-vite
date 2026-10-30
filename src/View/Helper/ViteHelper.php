@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CakeVite\View\Helper;
 
 use Cake\Core\Configure;
+use Cake\Routing\Asset;
 use Cake\View\Helper;
 use CakeVite\Enum\Environment;
 use CakeVite\Service\AssetService;
@@ -75,6 +76,23 @@ class ViteHelper extends Helper
         }
 
         return $environment->isDevelopment();
+    }
+
+    /**
+     * Resolve a source asset to its development URL or hashed production manifest URL.
+     *
+     * Returns a raw URL without rendering tags or adding to view blocks. Append SVG
+     * fragments after resolving the exact manifest key, and escape URLs in HTML.
+     *
+     * @param string $path Source asset path / exact manifest key.
+     * @param \CakeVite\ValueObject\ViteConfig|array<string, mixed>|null $config Configuration.
+     * @return string Asset URL.
+     */
+    public function asset(string $path, array|ViteConfig|null $config = null): string
+    {
+        $config = $this->resolveConfig($config);
+
+        return Asset::url($this->getAssetService()->resolveAssetUrl($path, $config), ['timestamp' => false]);
     }
 
     /**

@@ -297,4 +297,22 @@ class ManifestEntryTest extends TestCase
         $expected = ['/build/assets/vendor.js'];
         $this->assertSame($expected, $entry->getImportUrls());
     }
+
+    /**
+     * Static resources are not JavaScript, including explicitly declared Vite asset entries.
+     */
+    public function testStaticAssetTypes(): void
+    {
+        foreach (['icons.svg', 'logo.png', 'font.woff2', 'module.wasm'] as $file) {
+            $entry = ManifestEntry::fromManifestData($file, (object)['file' => $file, 'isEntry' => true], null);
+            $this->assertSame(AssetType::Asset, $entry->getAssetType());
+            $this->assertNull($entry->getScriptType());
+        }
+
+        foreach (['module.mjs', 'module.cjs'] as $file) {
+            $entry = ManifestEntry::fromManifestData($file, (object)['file' => $file], null);
+            $this->assertSame(AssetType::Script, $entry->getAssetType());
+            $this->assertSame(ScriptType::Module, $entry->getScriptType());
+        }
+    }
 }

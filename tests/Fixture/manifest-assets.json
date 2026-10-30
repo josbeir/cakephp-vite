@@ -1,0 +1,25 @@
+{
+  "src/app.ts": {
+    "file": "assets/app-abc123.js",
+    "src": "src/app.ts",
+    "isEntry": true
+  },
+  "src/style.css": {
+    "file": "assets/style-def456.css",
+    "src": "src/style.css",
+    "isEntry": true
+  },
+  "src/icons.svg": {
+    "file": "assets/icons-fedcba.svg",
+    "src": "src/icons.svg"
+  },
+  "src/logo.png": {
+    "file": "assets/logo-123abc.png",
+    "src": "src/logo.png",
+    "isEntry": true
+  },
+  "src/font.woff2": {
+    "file": "assets/font-456def.woff2",
+    "src": "src/font.woff2"
+  }
+}
