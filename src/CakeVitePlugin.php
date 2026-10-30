@@ -18,7 +18,6 @@ class CakeVitePlugin extends BasePlugin
      * Load plugin configuration
      *
      * @param \Cake\Core\PluginApplicationInterface $app Application instance
-     * @phpstan-param \Cake\Core\PluginApplicationInterface<mixed> $app
      */
     public function bootstrap(PluginApplicationInterface $app): void
     {

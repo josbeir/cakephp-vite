@@ -41,10 +41,11 @@ final class ManifestService
     public function load(ViteConfig $config, Environment $env = Environment::Production): ManifestCollection
     {
         $manifestPath = $this->resolveManifestPath($config);
+        $memoryKey = $manifestPath . '|' . $config->buildDirectory;
 
         // Check in-memory cache first (fastest)
-        if (isset(self::$manifestCache[$manifestPath])) {
-            return self::$manifestCache[$manifestPath];
+        if (isset(self::$manifestCache[$memoryKey])) {
+            return self::$manifestCache[$memoryKey];
         }
 
         // Check if persistent caching is enabled
@@ -56,7 +57,7 @@ final class ManifestService
             }, $config->cacheConfig);
 
             // Also store in memory cache for this request
-            self::$manifestCache[$manifestPath] = $collection;
+            self::$manifestCache[$memoryKey] = $collection;
 
             return $collection;
         }
@@ -65,7 +66,7 @@ final class ManifestService
         $collection = $this->loadFromFile($manifestPath, $config->buildDirectory);
 
         // Store in memory cache for this request
-        self::$manifestCache[$manifestPath] = $collection;
+        self::$manifestCache[$memoryKey] = $collection;
 
         return $collection;
     }
@@ -82,7 +83,7 @@ final class ManifestService
         $prefix = $config->pluginName ? $config->pluginName . '_' : '';
         $mtime = file_exists($manifestPath) ? filemtime($manifestPath) : 0;
 
-        return $prefix . 'vite_manifest_' . md5($manifestPath) . '_' . $mtime;
+        return $prefix . 'vite_manifest_' . md5($manifestPath . '|' . $config->buildDirectory) . '_' . $mtime;
     }
 
     /**

@@ -6,13 +6,14 @@ namespace CakeVite\Enum;
 /**
  * AssetType Enum
  *
- * Represents the type of asset being processed (script or style).
+ * Represents the type of asset being processed (script, style, or other asset).
  * Used to determine rendering strategy and HTML tag generation.
  */
 enum AssetType: string
 {
     case Script = 'script';
     case Style = 'style';
+    case Asset = 'asset';
 
     /**
      * Check if this is a Script asset

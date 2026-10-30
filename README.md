@@ -31,6 +31,7 @@ A [Vite.js](https://vitejs.dev/) integration for CakePHP 5.0+ applications. Seam
 - [Usage](#usage)
   - [Development Mode](#development-mode)
   - [Production Mode](#production-mode)
+  - [Static Asset URLs](#static-asset-urls)
   - [Plugin Assets](#plugin-assets)
   - [Multiple Entry Points](#multiple-entry-points)
   - [Custom Attributes](#custom-attributes)
@@ -402,6 +403,58 @@ In production, CakeVite automatically:
 <script type="module" src="/assets/main-a1b2c3d4.js"></script>
 <link rel="stylesheet" href="/assets/main-e5f6g7h8.css" />
 ```
+
+### Static Asset URLs
+
+Use `asset()` for images, SVG sprites, fonts, and other files managed by Vite:
+
+```php
+<?= $this->Html->image($this->Vite->asset('src/logo.png'), ['alt' => 'Site logo']) ?>
+
+<svg aria-hidden="true">
+    <use href="<?= h($this->Vite->asset('src/icons.svg') . '#image-up') ?>"></use>
+</svg>
+```
+
+In development, this returns the source URL on the configured Vite server. In
+production, it looks up the exact manifest key and returns the built URL, such as
+`/build/assets/icons-a1b2c3.svg`. Non-entry manifest assets are supported. Missing
+production entries throw `ManifestException` instead of returning an unhashed URL.
+
+The method returns a raw URL and does not render tags, modify view blocks, or add
+the HMR client. Escape the result with `h()` when writing an HTML attribute.
+Append SVG fragments after resolving the asset. CakePHP base paths and loaded
+plugin paths are respected, without adding file timestamps to hashed URLs.
+
+It accepts the same configuration array, `ViteConfig` object, or named
+configuration as `script()` and `css()`:
+
+```php
+<?= $this->Html->image($this->Vite->asset('src/logo.png', ['config' => 'admin'])) ?>
+```
+
+Files must be included in the Vite build manifest. Import them from a JavaScript
+entry, or emit generated assets from a Vite plugin with a stable
+`originalFileName`:
+
+```javascript
+// Inside a Vite plugin's buildStart hook:
+this.emitFile({
+  type: 'asset',
+  name: 'icons.svg',
+  originalFileName: 'src/icons.svg',
+  source: generatedSprite,
+});
+```
+
+This produces a `src/icons.svg` manifest entry with Vite's content-hashed output
+filename. Files copied unchanged from Vite's public directory are not manifest
+assets.
+
+External SVG `<use>` references require the [same origin as the page](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/use#usage_notes). When the
+Vite dev server uses a different origin, proxy it through the application origin
+or use a configuration with `forceProductionMode: true` and an existing build for
+the sprite.
 
 ### Plugin Assets
 
